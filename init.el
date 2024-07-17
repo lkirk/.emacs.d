@@ -38,12 +38,6 @@
   :custom
   (undo-tree-history-directory-alist '(("." . "~/.emacs.d/undo-tree"))))
 
-;; prevent eldoc from loading before elpaca
-(unless after-init-time
-  (unload-feature 'eldoc t)
-  (setq custom-delayed-init-variables '())
-  (defvar global-eldoc-mode nil))
-
 ;; preferred light theme
 (use-package modus-themes)
 
