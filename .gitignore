@@ -1,0 +1,11 @@
+elpa/
+elpaca/
+desktop/
+undo-tree/
+auto-save-list/
+
+history
+ido.last
+places
+recentf
+tramp
