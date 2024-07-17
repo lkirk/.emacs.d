@@ -47,17 +47,11 @@
 ;; preferred light theme
 (use-package modus-themes)
 
-;; need an updated version of jsonrpc for eglot
-(use-package jsonrpc)
-
-;; need an updated version of eldoc for flymake
-(use-package eldoc
-  :after elpaca-after-init-hook
-  :config (global-eldoc-mode))
+;; Packages that are included in emacs are marked with :ensure nil
 
 (use-package flymake
-  ;; :diminish
-  :after eldoc
+  ;; :diminish -- seems like a cool feature, need to look into it
+  :ensure nil
   :hook
   (prog-mode . flymake-mode)
   :bind (:map flymake-mode-map
@@ -65,7 +59,7 @@
 	      ("C-c N" . flymake-goto-prev-error)))
 
 (use-package eglot
-  :after (flymake jsonrpc)
+  :ensure nil
   :hook
   (prog-mode . eglot-ensure)
   (before-save . eglot-format)
@@ -88,7 +82,7 @@
   (global-company-mode t))
 
 (use-package tex
-  :ensure nil  ;; use version included in emacs
+  :ensure nil
   :hook
   (latex-mode . auto-fill-mode))
 
@@ -96,10 +90,9 @@
 ;; (use-package tex
 ;;   :ensure auctex)
 
-
 ;; Bind key sequence to the function
 (use-package python
-  :ensure nil  ;; use version included in emacs
+  :ensure nil
   :config
   (defun insert-ipython-debug()
     "Insert an interactive debug at point."
