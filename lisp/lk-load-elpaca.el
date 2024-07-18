@@ -1,3 +1,9 @@
+;;; lk-load-elpaca.el --- -*- lexical-binding: t; -*-
+
+;;; Commentary:
+;;  Installs and/or loads the elpaca package manager.
+
+;;; Code:
 
 (defvar elpaca-installer-version 0.7)
 (defvar elpaca-directory (expand-file-name "elpaca/" user-emacs-directory))
@@ -39,4 +45,5 @@
 (elpaca `(,@elpaca-order))
 
 
-(provide 'load-elpaca)
+(provide 'lk-load-elpaca)
+;;; lk-load-elpaca.el ends here
