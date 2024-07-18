@@ -43,6 +43,11 @@
 
 ;; Packages that are included in emacs are marked with :ensure nil
 
+(use-package eldoc
+  :ensure nil
+  :config
+  (global-eldoc-mode))
+
 (use-package flymake
   ;; :diminish -- seems like a cool feature, need to look into it
   :ensure nil
