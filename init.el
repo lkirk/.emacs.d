@@ -14,6 +14,8 @@
 (add-to-list 'load-path "~/.emacs.d/lisp")
 (require 'load-elpaca)
 
+;; BEGIN Package Management
+
 ;; enable elpaca get-user integration
 (elpaca elpaca-use-package
   (elpaca-use-package-mode))
@@ -21,6 +23,10 @@
 ;; globally add :ensure to use-package
 (require 'use-package-ensure)
 (setq use-package-always-ensure t)
+
+;; END Package Management
+
+;; BEGIN Look and Feel
 
 (use-package zenburn-theme
   :config
@@ -41,15 +47,27 @@
 ;; preferred light theme
 (use-package modus-themes)
 
-;; Packages that are included in emacs are marked with :ensure nil
+;; TODO: debug diminish for some minor modes (eldoc, etc...)
+(use-package diminish)
+
+;; END Look and Feel
+
+;; NB: Packages that are included in emacs are marked with :ensure nil
+;; BEGIN: Programming Modes
+
+(use-package haskell-mode)
+
+(use-package meson-mode
+  :hook
+  (meson-mode . company-mode))
 
 (use-package eldoc
+  :diminish eldoc-mode
   :ensure nil
   :config
   (global-eldoc-mode))
 
 (use-package flymake
-  ;; :diminish -- seems like a cool feature, need to look into it
   :ensure nil
   :hook
   (prog-mode . flymake-mode)
@@ -70,19 +88,23 @@
 	      ("C-c C-k" . xref-find-references)))
 
 (use-package flymake-ruff
+  :diminish
   :hook
   (eglot-managed-mode . flymake-ruff-load))
 
 (use-package ruff-format
+  :diminish
   :hook
   (python-mode . ruff-format-on-save-mode))
 
 ;; TODO: until we can do this with ruff
 (use-package isortify
+  :diminish
   :hook
   (python-mode . isortify-mode))
 
 (use-package company
+  :diminish
   :init
   (global-company-mode t))
 
@@ -114,6 +136,8 @@
     (insert "__import__(\"IPython\").embed()"))
   :bind
   ("C-c p" . insert-ipython-debug))
+
+;; END Programming Modes
 
 ;; pseudo-package for configuring built-in emacs functionality
 (use-package emacs
