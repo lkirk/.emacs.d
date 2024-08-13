@@ -64,6 +64,7 @@
   (before-save . eglot-format)
   :custom
   (eglot-autoshutdown 1)
+  (eglot-report-progress nil)
   :bind (:map eglot-mode-map
 	      ("C-c C-j" . xref-find-definitions)
 	      ("C-c C-k" . xref-find-references)))
@@ -76,6 +77,11 @@
   :hook
   (python-mode . ruff-format-on-save-mode))
 
+;; TODO: until we can do this with ruff
+(use-package isortify
+  :hook
+  (python-mode . isortify-mode))
+
 (use-package company
   :init
   (global-company-mode t))
@@ -85,9 +91,18 @@
   :hook
   (latex-mode . auto-fill-mode))
 
+(use-package yaml-mode
+  :mode ("\\.yml\\'" . yaml-mode))
+
+(use-package dockerfile-mode)
+
 ;; building is complicated
 ;; (use-package tex
 ;;   :ensure auctex)
+
+(use-package sphinx-doc
+  :hook
+  (python-mode . sphinx-doc-mode))
 
 ;; Bind key sequence to the function
 (use-package python
@@ -180,8 +195,7 @@
   (initial-scratch-message "")
   ;; Configure ido
   (ido-ignore-extensions t)
-  (ido-ignore-directories '("__pycache__"))
-  (ido-ignore-files '("__pycache__"))
+  (ido-ignore-files '("__pycache__" "\\.egg-info\\'"))
   ;; Initial major mode for the scratch buffer
   (initial-major-mode 'fundamental-mode)
   ;; fill-paragraph number of columns
