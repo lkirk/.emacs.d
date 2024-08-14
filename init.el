@@ -223,7 +223,10 @@
   ;; Initial major mode for the scratch buffer
   (initial-major-mode 'fundamental-mode)
   ;; fill-paragraph number of columns
-  (fill-column 80))
+  (fill-column 80)
+
+  :hook
+  (kill-emacs . desktop-save-in-desktop-dir))
 
 (provide 'init)
 ;;; init.el ends here
