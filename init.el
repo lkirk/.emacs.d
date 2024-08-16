@@ -42,7 +42,15 @@
   (evil-set-undo-system 'undo-tree)
   (evil-mode t)
   :custom
+  ;; these next two are needed for evil-collection
+  (evil-want-integration t) ;; optional, already t by default
+  (evil-want-keybinding nil)
   (undo-tree-history-directory-alist '(("." . "~/.emacs.d/undo-tree"))))
+
+(use-package evil-collection
+  :after evil
+  :config
+  (evil-collection-init))
 
 ;; preferred light theme
 (use-package modus-themes)
@@ -52,8 +60,34 @@
 
 ;; END Look and Feel
 
+;; BEGIN: Dev Tools
+  (use-package magit
+    :bind
+    :commands magit-status magit-blame
+    :hook
+    (with-editor-mode evil-insert-state))
+;; END: Dev Tools
+
 ;; NB: Packages that are included in emacs are marked with :ensure nil
 ;; BEGIN: Programming Modes
+
+(use-package cc-mode
+  :ensure nil
+  :custom
+  (indent-tabs-mode nil)
+  (c-basic-offset 4))
+
+;; Need this for tskit development. Uses an older version of clang-format
+;; (set via dir-locals.el)
+(use-package clang-format)
+
+(use-package julia-mode
+  :hook
+  (julia-mode . eglot-jl-init))
+
+(use-package eglot-jl
+  :after eglot
+  :commands eglot-jl-init)
 
 (use-package haskell-mode)
 
@@ -76,10 +110,16 @@
 	      ("C-c N" . flymake-goto-prev-error)))
 
 (use-package eglot
+  :init
+  (defun my/format-on-save ()
+    "Format buffer if not in `cc-mode`."
+    ;; Disable so that I can use clang-format in tskit development
+    (unless (derived-mode-p 'c-mode)
+      (eglot-format)))
   :ensure nil
   :hook
   (prog-mode . eglot-ensure)
-  (before-save . eglot-format)
+  (before-save . my/format-on-save)
   :custom
   (eglot-autoshutdown 1)
   (eglot-report-progress nil)
@@ -161,6 +201,11 @@
     (interactive)
     (load-theme 'zenburn t))
 
+  (defun save-desktop()
+    "Non-interactive version of `desktop-save-in-desktop-dir`"
+    (desktop-save desktop-dirname)
+    (message "Desktop saved in %s" (abbreviate-file-name desktop-dirname)))
+
   :bind
   ("C-x c" . comment-region)
   ("C-x C" . uncomment-region)
@@ -219,14 +264,21 @@
   (initial-scratch-message "")
   ;; Configure ido
   (ido-ignore-extensions t)
-  (ido-ignore-files '("__pycache__" "\\.egg-info\\'"))
+  (ido-ignore-files '("__pycache__" "\\.egg-info\\'" "\\#.*#\\'"))
+  (ido-ignore-buffers '("\\` " "\\*EGLOT .+? events\\*" "\\*Flymake log\\*"))
   ;; Initial major mode for the scratch buffer
   (initial-major-mode 'fundamental-mode)
   ;; fill-paragraph number of columns
   (fill-column 80)
 
+  (safe-local-variable-values
+   '((clang-format-executable . "clang-format-6")
+     (eval add-to-list 'eglot-server-programs
+           '(c-mode "clangd" "-header-insertion=never"))
+     (eval add-hook 'before-save-hook 'clang-format-buffer nil t)))
+
   :hook
-  (kill-emacs . desktop-save-in-desktop-dir))
+  (kill-emacs . save-desktop))
 
 (provide 'init)
 ;;; init.el ends here
