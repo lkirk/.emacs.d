@@ -83,7 +83,9 @@
 
 (use-package julia-mode
   :hook
-  (julia-mode . eglot-jl-init))
+  (julia-mode . eglot-jl-init)
+  :custom
+  (tab-width 4))
 
 (use-package eglot-jl
   :after eglot
@@ -123,6 +125,14 @@
   :custom
   (eglot-autoshutdown 1)
   (eglot-report-progress nil)
+  :config
+  (let ((mode '(wolfram-mode :language-id "Wolfram Language"))
+        ;; (wolfram-lsp-cmd '("wolframscript" "-code"
+        ;;                    "Needs[\"LSPServer`\"];LSPServer`StartServer[]")))
+        (wolfram-lsp-cmd '("WolframKernel" "-noinit" "-noprompt"
+                           "-nopaclet" "-noicon" "-nostartuppaclets" "-run"
+                           "Needs[\"LSPServer`\"];LSPServer`StartServer[]")))
+    (add-to-list 'eglot-server-programs (cons mode wolfram-lsp-cmd)))
   :bind (:map eglot-mode-map
 	      ("C-c C-j" . xref-find-definitions)
 	      ("C-c C-k" . xref-find-references)))
@@ -157,6 +167,12 @@
   :mode ("\\.yml\\'" . yaml-mode))
 
 (use-package dockerfile-mode)
+
+(use-package wolfram-mode
+  :mode "\\.\\(wl\\|wls\\|m\\)\\'"
+  :custom
+  (tab-width 4)
+  (wolfram-indent 4))
 
 ;; building is complicated
 ;; (use-package tex
