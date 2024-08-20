@@ -61,11 +61,11 @@
 ;; END Look and Feel
 
 ;; BEGIN: Dev Tools
-  (use-package magit
-    :bind
-    :commands magit-status magit-blame
-    :hook
-    (with-editor-mode evil-insert-state))
+(use-package magit
+  :bind
+  :commands magit-status magit-blame
+  :hook
+  (with-editor-mode evil-insert-state))
 ;; END: Dev Tools
 
 ;; NB: Packages that are included in emacs are marked with :ensure nil
@@ -82,6 +82,7 @@
 (use-package clang-format)
 
 (use-package julia-mode
+  :mode ("\\.jl\\'" . julia-mode)
   :hook
   (julia-mode . eglot-jl-init)
   :custom
@@ -89,7 +90,13 @@
 
 (use-package eglot-jl
   :after eglot
-  :commands eglot-jl-init)
+  :commands eglot-jl-init
+  :custom
+  (tab-width 4))
+
+(use-package systemd
+  :mode (("\\.service\\'" . systemd-mode)
+         ("\\.target\\'" . systemd-mode)))
 
 (use-package haskell-mode)
 
@@ -108,8 +115,8 @@
   :hook
   (prog-mode . flymake-mode)
   :bind (:map flymake-mode-map
-	      ("C-c n" . flymake-goto-next-error)
-	      ("C-c N" . flymake-goto-prev-error)))
+	          ("C-c n" . flymake-goto-next-error)
+	          ("C-c N" . flymake-goto-prev-error)))
 
 (use-package eglot
   :init
@@ -134,8 +141,8 @@
                            "Needs[\"LSPServer`\"];LSPServer`StartServer[]")))
     (add-to-list 'eglot-server-programs (cons mode wolfram-lsp-cmd)))
   :bind (:map eglot-mode-map
-	      ("C-c C-j" . xref-find-definitions)
-	      ("C-c C-k" . xref-find-references)))
+	          ("C-c C-j" . xref-find-definitions)
+	          ("C-c C-k" . xref-find-references)))
 
 (use-package flymake-ruff
   :diminish
@@ -252,7 +259,7 @@
   ;; Until I make eidos-mode a proper package, load here
   (let ((eidos-mode-file "~/repo/eidos-mode/eidos-mode.el"))
     (if (file-exists-p eidos-mode-file)
-	(progn
+	    (progn
           (load eidos-mode-file)
           (add-to-list 'auto-mode-alist '("\\.slim\\'" . eidos-mode)))))
 
