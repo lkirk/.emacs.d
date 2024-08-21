@@ -73,6 +73,10 @@
 
 (use-package cc-mode
   :ensure nil
+  :hook
+  (c-mode . (lambda()
+              (setq comment-start "//")
+              (setq comment-end "")))
   :custom
   (indent-tabs-mode nil)
   (c-basic-offset 4))
@@ -80,6 +84,10 @@
 ;; Need this for tskit development. Uses an older version of clang-format
 ;; (set via dir-locals.el)
 (use-package clang-format)
+
+(use-package rust-mode
+  :custom
+  (rust-mode-treesitter-derive t))
 
 (use-package julia-mode
   :mode ("\\.jl\\'" . julia-mode)
@@ -123,7 +131,7 @@
   (defun my/format-on-save ()
     "Format buffer if not in `cc-mode`."
     ;; Disable so that I can use clang-format in tskit development
-    (unless (derived-mode-p 'c-mode)
+    (unless (string-match "repo/tskit" buffer-file-name)
       (eglot-format)))
   :ensure nil
   :hook
