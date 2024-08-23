@@ -66,7 +66,9 @@
   :bind
   :commands magit-status magit-blame
   :hook
-  (with-editor-mode evil-insert-state))
+  (with-editor-mode evil-insert-state)
+  :custom
+  (magit-display-buffer-function #'magit-display-buffer-fullframe-status-v1))
 ;; END: Dev Tools
 
 ;; NB: Packages that are included in emacs are marked with :ensure nil
