@@ -42,6 +42,7 @@
   (evil-set-undo-system 'undo-tree)
   (evil-mode t)
   :custom
+  (evil-want-C-u-scroll t)
   ;; these next two are needed for evil-collection
   (evil-want-integration t) ;; optional, already t by default
   (evil-want-keybinding nil)
