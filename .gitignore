@@ -3,6 +3,7 @@ elpaca/
 desktop/
 undo-tree/
 auto-save-list/
+transient/
 
 history
 ido.last
