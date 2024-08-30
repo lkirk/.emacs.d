@@ -184,6 +184,11 @@
 (use-package yaml-mode
   :mode ("\\.yml\\'" . yaml-mode))
 
+(use-package markdown-mode
+  :mode ("\\.md\\'" . markdown-mode)
+  :custom
+  (markdown-command '("pandoc" "--from=markdown" "--to=html5")))
+
 (use-package dockerfile-mode)
 
 (use-package wolfram-mode
@@ -211,7 +216,37 @@
   :bind
   ("C-c p" . insert-ipython-debug))
 
+(use-package auto-fill
+  :ensure nil
+  :mode (("\\.md\\'" . auto-fill-mode)
+         ("\\.tex\\'" . auto-fill-mode)))
+
 ;; END Programming Modes
+
+;; Ensure that everything loads before loading desktop mode
+;; this prevents opening buffers before their major modes are available
+(elpaca (general :wait t))
+
+(use-package desktop
+  :defer t
+  :ensure nil
+  :init
+  (defun save-desktop()
+    "Non-interactive version of `desktop-save-in-desktop-dir`.
+     Prevents hangs when killing emacs from systemd"
+    (desktop-save desktop-dirname)
+    (message "Desktop saved in %s" (abbreviate-file-name desktop-dirname)))
+  :custom
+  (desktop-dirname "~/.emacs.d/desktop/")
+  (desktop-path (list desktop-dirname))
+  (desktop-base-file-name "emacs.desktop")
+  (desktop-base-lock-name "emacs.desktop.lock")
+  (desktop-save t)
+  (desktop-load-locked-desktop nil)
+  (desktop-auto-save-timeout 30)
+  (desktop-save-mode 1)
+  :hook
+  (kill-emacs . save-desktop))
 
 ;; pseudo-package for configuring built-in emacs functionality
 (use-package emacs
@@ -234,11 +269,6 @@
     "Activate prefered light theme (modus operandi)"
     (interactive)
     (load-theme 'zenburn t))
-
-  (defun save-desktop()
-    "Non-interactive version of `desktop-save-in-desktop-dir`"
-    (desktop-save desktop-dirname)
-    (message "Desktop saved in %s" (abbreviate-file-name desktop-dirname)))
 
   :bind
   ("C-x c" . comment-region)
@@ -263,10 +293,9 @@
   (savehist-mode t)
   (recentf-mode t)
   ;; y or n instead of typing yes or no
-  (defalias 'yes-or-no #'y-or-n-p)
+  (setopt use-short-answers t)
   ;; Turn off fringe
   (fringe-mode -1)
-  (desktop-save-mode 1)
   ;; Until I make eidos-mode a proper package, load here
   (let ((eidos-mode-file "~/repo/eidos-mode/eidos-mode.el"))
     (if (file-exists-p eidos-mode-file)
@@ -275,16 +304,6 @@
           (add-to-list 'auto-mode-alist '("\\.slim\\'" . eidos-mode)))))
 
   :custom
-  ;; desktop mode settings
-  (desktop-dirname "~/.emacs.d/desktop/")
-  (desktop-base-file-name "emacs.desktop")
-  (desktop-base-lock-name "emacs.desktop.lock")
-  (desktop-path (list desktop-dirname))
-  (desktop-save t)
-  (desktop-load-locked-desktop nil)
-  (desktop-auto-save-timeout 30)
-  (desktop-save-mode 1)
-
   ;; Do not make backup ~ files
   (make-backup-files nil)
   ;; From my orig emacs config.. not sure why
@@ -309,10 +328,8 @@
    '((clang-format-executable . "clang-format-6")
      (eval add-to-list 'eglot-server-programs
            '(c-mode "clangd" "-header-insertion=never"))
-     (eval add-hook 'before-save-hook 'clang-format-buffer nil t)))
+     (eval add-hook 'before-save-hook 'clang-format-buffer nil t))))
 
-  :hook
-  (kill-emacs . save-desktop))
 
 (provide 'init)
 ;;; init.el ends here
