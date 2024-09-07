@@ -171,10 +171,10 @@
   :init
   (global-company-mode t))
 
-(use-package tex
-  :ensure nil
-  :hook
-  (latex-mode . auto-fill-mode))
+;; (use-package tex
+;;   :ensure nil
+;;   :hook
+;;   (latex-mode . auto-fill-mode))
 
 (use-package yaml-mode
   :mode ("\\.yml\\'" . yaml-mode))
@@ -182,7 +182,9 @@
 (use-package markdown-mode
   :mode ("\\.md\\'" . markdown-mode)
   :custom
-  (markdown-command '("pandoc" "--from=markdown" "--to=html5")))
+  (markdown-command '("pandoc" "--from=markdown" "--to=html5"))
+  :hook
+  (markdown-mode . auto-fill-mode))
 
 (use-package dockerfile-mode)
 
@@ -192,9 +194,14 @@
   (tab-width 4)
   (wolfram-indent 4))
 
-;; building is complicated
-;; (use-package tex
-;;   :ensure auctex)
+(use-package auctex
+  :ensure nil
+  :hook
+  (LaTeX-mode-hook . auto-fill-mode))
+
+(use-package preview-latex
+  :ensure nil
+  :after auctex)
 
 (use-package sphinx-doc
   :hook
