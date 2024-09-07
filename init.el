@@ -155,11 +155,6 @@
 	          ("C-c C-j" . xref-find-definitions)
 	          ("C-c C-k" . xref-find-references)))
 
-(use-package flymake-ruff
-  :diminish
-  :hook
-  (eglot-managed-mode . flymake-ruff-load))
-
 (use-package ruff-format
   :diminish
   :hook
@@ -221,7 +216,26 @@
   :mode (("\\.md\\'" . auto-fill-mode)
          ("\\.tex\\'" . auto-fill-mode)))
 
+(use-package elisp-autofmt
+  :commands (elisp-autofmt-mode elisp-autofmt-buffer)
+  :hook (emacs-lisp-mode . elisp-autofmt-mode))
+
 ;; END Programming Modes
+
+;; BEGIN Productivity Tools
+
+(use-package org
+  :hook
+  (org-mode . auto-fill-mode))
+
+(use-package evil-org
+  :after org
+  :hook (org-mode . (lambda () evil-org-mode))
+  :config
+  (require 'evil-org-agenda)
+  (evil-org-agenda-set-keys))
+
+;; END Productivity Tools
 
 ;; Ensure that everything loads before loading desktop mode
 ;; this prevents opening buffers before their major modes are available
@@ -284,8 +298,6 @@
   (tool-bar-mode -1)
   ;; Disable the scroll bars
   (scroll-bar-mode -1)
-  ;; Fix issue with backspace on remote servers over ssh
-  (normal-erase-is-backspace-mode 1)
   ;; Enable ido mode
   (ido-mode t)
   ;; Save the history across sessions as much as possible
@@ -325,7 +337,14 @@
   (fill-column 80)
 
   (safe-local-variable-values
-   '((clang-format-executable . "clang-format-6")
+   '((org-todo-keyword-faces
+      ("TODO" :foreground "lightgrey" :weight bold)
+      ("IN_PROGRESS" :foreground "greenyellow" :weight bold)
+      ("REVIEW" :foreground "lightslateblue" :weight bold)
+      ("DONE" :foreground org-done :weight bold)
+      ("CANCELLED" :foreground "grey50" :weight bold))
+     (org-log-into-drawer . t)
+     (clang-format-executable . "clang-format-6")
      (eval add-to-list 'eglot-server-programs
            '(c-mode "clangd" "-header-insertion=never"))
      (eval add-hook 'before-save-hook 'clang-format-buffer nil t))))
