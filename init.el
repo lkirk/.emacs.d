@@ -99,6 +99,19 @@
   :custom
   (tab-width 4))
 
+(use-package julia-repl
+  :hook
+  (julia-mode . julia-repl-mode)
+  (julia-repl . undo-tree-mode)
+  :config
+  (julia-repl-set-terminal-backend 'eat))
+
+(use-package eat
+  :custom
+  (eat-kill-buffer-on-exit t)
+  :hook
+  (eshell-load . eat-eshell-mode))
+
 (use-package eglot-jl
   :after eglot
   :commands eglot-jl-init
@@ -177,7 +190,9 @@
 ;;   (latex-mode . auto-fill-mode))
 
 (use-package yaml-mode
-  :mode ("\\.yml\\'" . yaml-mode))
+  :mode
+  (("\\.yml\\'" . yaml-mode)
+   ("\\clang-format\\'" . yaml-mode)))
 
 (use-package markdown-mode
   :mode ("\\.md\\'" . markdown-mode)
