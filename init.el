@@ -219,7 +219,6 @@
 (use-package
  elisp-autofmt
  :commands (elisp-autofmt-mode elisp-autofmt-buffer)
- :config
  :hook (emacs-lisp-mode . elisp-autofmt-mode))
 
 ;; END Programming Modes
@@ -228,7 +227,7 @@
 
 (use-package
  org
- :custom (org-hide-macro-markers 1)
+ :custom (org-hide-macro-markers 1) (org-src-tab-acts-natively nil)
  :config
  (org-babel-do-load-languages
   'org-babel-load-languages
