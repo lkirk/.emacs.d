@@ -4,6 +4,7 @@ desktop/
 undo-tree/
 auto-save-list/
 transient/
+elisp-autofmt-cache/
 
 history
 ido.last
