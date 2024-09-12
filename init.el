@@ -232,8 +232,20 @@
 ;; BEGIN Productivity Tools
 
 (use-package org
+  :custom
+  (org-hide-macro-markers 1)
+  :config
+  (org-babel-do-load-languages
+   'org-babel-load-languages
+   '((shell . t)
+     (python . t)
+     (julia . t)
+     (C . t)))
   :hook
   (org-mode . auto-fill-mode))
+
+(use-package ob-async
+  :after org)
 
 (use-package evil-org
   :after org
@@ -296,6 +308,9 @@
   ("C-x C" . uncomment-region)
   ("M-`" . select-next-window)
 
+  :hook
+  (after-save . executable-make-buffer-file-executable-if-script-p)
+
   :config
   ;; Set default font face
   (set-face-attribute 'default nil :font "Ubuntu Mono")
@@ -354,6 +369,7 @@
      (clang-format-executable . "clang-format-6")
      (eval add-to-list 'eglot-server-programs
            '(c-mode "clangd" "-header-insertion=never"))
+     (eval add-hook 'before-save-hook 'org-beamer-export-to-pdf nil t)
      (eval add-hook 'before-save-hook 'clang-format-buffer nil t))))
 
 
