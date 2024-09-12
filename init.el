@@ -219,9 +219,8 @@
 (use-package
  elisp-autofmt
  :commands (elisp-autofmt-mode elisp-autofmt-buffer)
- :hook
- (emacs-lisp-mode . elisp-autofmt-mode)
- (before-save . elisp-autofmt-buffer))
+ :config
+ :hook (emacs-lisp-mode . elisp-autofmt-mode))
 
 ;; END Programming Modes
 
@@ -234,6 +233,9 @@
  (org-babel-do-load-languages
   'org-babel-load-languages
   '((shell . t) (python . t) (julia . t) (C . t) (latex . t)))
+ ;; (add-to-list
+ ;;  'org-latex-classes
+ ;;  '("hw" "\\documentclass{hw}")
  :hook (org-mode . auto-fill-mode))
 
 (use-package ob-async :after org)
