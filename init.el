@@ -255,7 +255,8 @@
    '((shell . t)
      (python . t)
      (julia . t)
-     (C . t)))
+     (C . t)
+     (latex . t)))
   :hook
   (org-mode . auto-fill-mode))
 
