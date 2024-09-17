@@ -290,11 +290,13 @@
  (defun light-theme ()
    "Activate prefered light theme (modus operandi)"
    (interactive)
+   (disable-theme (car custom-enabled-themes))
    (load-theme 'modus-operandi t))
 
  (defun dark-theme ()
-   "Activate prefered light theme (modus operandi)"
+   "Activate prefered dark theme (zenburn)"
    (interactive)
+   (disable-theme (car custom-enabled-themes))
    (load-theme 'zenburn t))
 
  :bind
