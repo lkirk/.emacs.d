@@ -221,6 +221,8 @@
  :commands (elisp-autofmt-mode elisp-autofmt-buffer)
  :hook (emacs-lisp-mode . elisp-autofmt-mode))
 
+(use-package typescript-mode)
+
 ;; END Programming Modes
 
 ;; BEGIN Productivity Tools
