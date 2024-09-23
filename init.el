@@ -27,8 +27,12 @@
 
 ;; BEGIN Look and Feel
 
-(use-package zenburn-theme :config (load-theme 'zenburn t))
+; themes
+(use-package zenburn-theme)
+(use-package solarized-theme)
+(use-package modus-themes)
 
+; undo tree + evil
 (use-package undo-tree :config (global-undo-tree-mode))
 
 (use-package
@@ -44,9 +48,6 @@
  (undo-tree-history-directory-alist '(("." . "~/.emacs.d/undo-tree"))))
 
 (use-package evil-collection :after evil :config (evil-collection-init))
-
-;; preferred light theme
-(use-package modus-themes)
 
 ;; TODO: debug diminish for some minor modes (eldoc, etc...)
 (use-package diminish)
