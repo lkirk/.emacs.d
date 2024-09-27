@@ -30,7 +30,23 @@
 ; themes
 (use-package zenburn-theme)
 (use-package solarized-theme)
-(use-package modus-themes)
+(use-package
+ modus-themes
+ :init (setq modus-operandi-palette-overrides '((bg-main "#EDEDED")))
+ :config
+ (progn
+   (defvar after-load-theme-hook nil
+     "Hook run after a color theme is loaded using `load-theme'.")
+   (defadvice load-theme (after run-after-load-theme-hook activate)
+     "Run `after-load-theme-hook'."
+     (run-hooks 'after-load-theme-hook))
+   (defun customize-modus-operandi ()
+     "Customize modus operandi theme"
+     (if (member 'modus-operandi custom-enabled-themes)
+         (custom-theme-set-faces 'modus-operandi
+                                 '(mode-line-buffer-id
+                                   ((t (:foreground "#5a5a5a")))))))
+   (add-hook 'after-load-theme-hook 'customize-modus-operandi)))
 
 ; undo tree + evil
 (use-package undo-tree :config (global-undo-tree-mode))
@@ -64,6 +80,9 @@
  :hook (with-editor-mode evil-insert-state)
  :custom
  (magit-display-buffer-function #'magit-display-buffer-fullframe-status-v1))
+
+(use-package rainbow-mode)
+
 ;; END: Dev Tools
 
 ;; NB: Packages that are included in emacs are marked with :ensure nil
