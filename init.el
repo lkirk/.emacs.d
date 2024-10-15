@@ -134,6 +134,7 @@
 (use-package haskell-mode)
 
 (use-package meson-mode :hook (meson-mode . company-mode))
+(use-package cmake-mode :mode "CMakeLists\\.txt\\'")
 
 (use-package eldoc :diminish eldoc-mode :ensure nil :config (global-eldoc-mode))
 
