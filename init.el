@@ -71,15 +71,13 @@
 ;; END Look and Feel
 
 ;; BEGIN: Dev Tools
+(use-package transient)
 (use-package
  magit
- :bind
- :commands
- magit-status
- magit-blame
+ :after transient ;; magit requires a newer version of transient
+ :commands magit-status magit-blame
  :hook (with-editor-mode evil-insert-state)
- :custom
- (magit-display-buffer-function #'magit-display-buffer-fullframe-status-v1))
+ :custom (magit-display-buffer-function #'magit-display-buffer-fullframe-status-v1))
 
 (use-package rainbow-mode)
 
@@ -160,7 +158,7 @@
  :ensure nil
  :hook (prog-mode . eglot-ensure) (before-save . my/format-on-save)
  :custom (eglot-autoshutdown 1) (eglot-report-progress nil)
- :config
+ :config (add-to-list 'eglot-server-programs '(LaTeX-mode . ("texlab")))
  (let ((mode '(wolfram-mode :language-id "Wolfram Language"))
        ;; (wolfram-lsp-cmd '("wolframscript" "-code"
        ;;                    "Needs[\"LSPServer`\"];LSPServer`StartServer[]")))
@@ -174,6 +172,15 @@
           "-run"
           "Needs[\"LSPServer`\"];LSPServer`StartServer[]")))
    (add-to-list 'eglot-server-programs (cons mode wolfram-lsp-cmd)))
+ (setq-default eglot-workspace-configuration
+               '(:texlab
+                 (:experimental
+                  (:verbatimEnvironments ["julia"])
+                  :auxDirectory "./build"
+                  :chktex (:onEdit t :onOpenAndSave t)
+                  :formatterLineLength 80
+                  :latexFormatter "latexindent"
+                  :latexindent (:modifyLineBreaks t))))
  :bind
  (:map
   eglot-mode-map
@@ -189,11 +196,6 @@
 (use-package isortify :diminish :hook (python-mode . isortify-mode))
 
 (use-package company :diminish :init (global-company-mode t))
-
-;; (use-package tex
-;;   :ensure nil
-;;   :hook
-;;   (latex-mode . auto-fill-mode))
 
 (use-package
  yaml-mode
@@ -214,9 +216,17 @@
  (tab-width 4)
  (wolfram-indent 4))
 
-(use-package auctex :ensure nil :hook (LaTeX-mode-hook . auto-fill-mode))
-
-(use-package preview-latex :ensure nil :after auctex)
+(use-package
+ tex
+ :ensure auctex
+ :custom
+ (TeX-parse-self t)
+ (TeX-electric-math t)
+ (font-latex-fontify-script nil)
+ :hook
+ (LaTeX-mode . eglot-ensure)
+ (LaTeX-mode . auto-fill-mode)
+ (LaTeX-mode . flyspell-mode))
 
 (use-package sphinx-doc :hook (python-mode . sphinx-doc-mode))
 
@@ -231,10 +241,7 @@
    (insert "__import__(\"IPython\").embed()"))
  :bind ("C-c p" . insert-ipython-debug))
 
-(use-package
- auto-fill
- :ensure nil
- :mode (("\\.md\\'" . auto-fill-mode) ("\\.tex\\'" . auto-fill-mode)))
+(use-package auto-fill :ensure nil :mode (("\\.md\\'" . auto-fill-mode)))
 
 (use-package
  elisp-autofmt
@@ -257,7 +264,7 @@
  ;; (add-to-list
  ;;  'org-latex-classes
  ;;  '("hw" "\\documentclass{hw}")
- :hook (org-mode . auto-fill-mode))
+ :hook (org-mode . auto-fill-mode) (org-mode . org-beamer-export-to-pdf))
 
 (use-package ob-async :after org)
 
@@ -353,6 +360,22 @@
        (progn
          (load eidos-mode-file)
          (add-to-list 'auto-mode-alist '("\\.slim\\'" . eidos-mode)))))
+
+ (let ((theme-file (expand-file-name "~/.theme")))
+   (when (file-exists-p theme-file)
+     (require 's)
+     (require 'f)
+     (let ((theme (s-chomp (f-read-text theme-file 'utf-8))))
+       (message theme)
+       (cond
+        ((string= theme "light")
+         (message "loading light theme")
+         (disable-theme (car custom-enabled-themes))
+         (load-theme 'modus-operandi t))
+        ((string= theme "dark")
+         (message "loading dark theme")
+         (disable-theme (car custom-enabled-themes))
+         (load-theme 'zenburn t))))))
 
  :custom
  ;; Do not make backup ~ files
