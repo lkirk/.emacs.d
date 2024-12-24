@@ -134,7 +134,7 @@
 (use-package haskell-mode)
 
 (use-package meson-mode :hook (meson-mode . company-mode))
-(use-package cmake-mode :mode "CMakeLists\\.txt\\'")
+;; (use-package cmake-mode)
 
 (use-package eldoc :diminish eldoc-mode :ensure nil :config (global-eldoc-mode))
 
@@ -157,9 +157,15 @@
    (unless (string-match "repo/tskit" buffer-file-name)
      (eglot-format)))
  :ensure nil
- :hook (prog-mode . eglot-ensure) (before-save . my/format-on-save)
- :custom (eglot-autoshutdown 1) (eglot-report-progress nil)
- :config (add-to-list 'eglot-server-programs '(LaTeX-mode . ("texlab")))
+ :hook
+ (prog-mode . eglot-ensure)
+ (before-save . my/format-on-save)
+ :custom
+ (eglot-autoshutdown 1)
+ (eglot-report-progress nil)
+ :config
+ (add-to-list 'eglot-server-programs '(awk-mode . ("awk-language-server")))
+ (add-to-list 'eglot-server-programs '(LaTeX-mode . ("texlab")))
  (let ((mode '(wolfram-mode :language-id "Wolfram Language"))
        ;; (wolfram-lsp-cmd '("wolframscript" "-code"
        ;;                    "Needs[\"LSPServer`\"];LSPServer`StartServer[]")))
@@ -222,14 +228,21 @@
  :ensure auctex
  :custom
  (TeX-parse-self t)
- (TeX-electric-math t)
  (font-latex-fontify-script nil)
+ ;; (TeX-electric-math (cons "\\(" "\\)"))
  :hook
  (LaTeX-mode . eglot-ensure)
  (LaTeX-mode . auto-fill-mode)
- (LaTeX-mode . flyspell-mode))
+ (LaTeX-mode . flyspell-mode)
+ (LaTeX-mode
+  .
+  (lambda () (set (make-local-variable 'TeX-electric-math) (cons "\\(" "\\)"))))
+ (plain-TeX-mode
+  . (lambda () (set (make-local-variable 'TeX-electric-math) (cons "$" "$")))))
+
 
 (use-package sphinx-doc :hook (python-mode . sphinx-doc-mode))
+;; (use-package gendoxy)
 
 ;; Bind key sequence to the function
 (use-package
@@ -251,6 +264,16 @@
 
 (use-package typescript-mode)
 
+(use-package ess :defer t :ensure t)
+
+(use-package
+ ess-r-mode
+ :bind
+ (:map ess-r-mode-map ("_" . ess-insert-assign))
+ (:map inferior-ess-r-mode-map ("_" . ess-insert-assign))
+ :ensure nil
+ :custom (inferior-R-args "--no-restore-history --no-save "))
+
 ;; END Programming Modes
 
 ;; BEGIN Productivity Tools
@@ -262,10 +285,7 @@
  (org-babel-do-load-languages
   'org-babel-load-languages
   '((shell . t) (python . t) (julia . t) (C . t) (latex . t)))
- ;; (add-to-list
- ;;  'org-latex-classes
- ;;  '("hw" "\\documentclass{hw}")
- :hook (org-mode . auto-fill-mode) (org-mode . org-beamer-export-to-pdf))
+ :hook (org-mode . auto-fill-mode)) ;; (org-mode . org-beamer-export-to-pdf))
 
 (use-package ob-async :after org)
 
