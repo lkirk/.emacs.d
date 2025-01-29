@@ -136,7 +136,20 @@
 (use-package meson-mode :hook (meson-mode . company-mode))
 ;; (use-package cmake-mode)
 
+(use-package nix-mode :mode "\\.nix\\'")
+
 (use-package eldoc :diminish eldoc-mode :ensure nil :config (global-eldoc-mode))
+
+(use-package
+ org-roam
+ :init
+ (unless (file-exists-p "~/roam")
+   (make-directory "~/roam"))
+ :custom
+ (org-roam-directory "~/roam")
+ (org-roam-graph-link-hidden-types '("file" "http" "https"))
+ (org-roam-complete-everywhere t)
+ :config (org-roam-db-autosync-mode))
 
 (use-package
  flymake
@@ -154,7 +167,8 @@
  (defun my/format-on-save ()
    "Format buffer if not in `cc-mode`."
    ;; Disable so that I can use clang-format in tskit development
-   (unless (string-match "repo/tskit" buffer-file-name)
+   (unless (or (string-match "repo/tskit" buffer-file-name)
+               (derived-mode-p 'wolfram-mode))
      (eglot-format)))
  :ensure nil
  :hook
@@ -274,17 +288,34 @@
  :ensure nil
  :custom (inferior-R-args "--no-restore-history --no-save "))
 
+(use-package clojure-mode :defer t)
+(use-package cider :defer t)
+
+(use-package geiser)
+(use-package geiser-chez :custom (geiser-chez-binary "chez"))
+
 ;; END Programming Modes
 
 ;; BEGIN Productivity Tools
 
 (use-package
  org
- :custom (org-hide-macro-markers 1) (org-src-tab-acts-natively nil)
+ :init
+ (defun org-zotero-open (url)
+   "Visit the zotero link to a pdf referenced by the url.
+    The link should look like: zotero://open-pdf/library/items/3A2XZNUW"
+   (async-shell-command
+    ;; NB org strips off zotero:
+    (concat "xdg-open zotero:" (shell-quote-argument url) " & disown")))
+ :custom
+ (org-hide-macro-markers 1)
+ (org-src-tab-acts-natively nil)
+ (org-return-follows-link t)
  :config
  (org-babel-do-load-languages
   'org-babel-load-languages
   '((shell . t) (python . t) (julia . t) (C . t) (latex . t)))
+ (org-add-link-type "zotero" #'org-zotero-open)
  :hook (org-mode . auto-fill-mode)) ;; (org-mode . org-beamer-export-to-pdf))
 
 (use-package ob-async :after org)
@@ -418,9 +449,16 @@
  (initial-major-mode 'fundamental-mode)
  ;; fill-paragraph number of columns
  (fill-column 80)
-
  (safe-local-variable-values
-  '((org-todo-keyword-faces
+  '((eval add-to-list
+          'eglot-server-programs
+          '(haskell-mode
+            "nix"
+            "develop"
+            "--command"
+            "haskell-language-server-wrapper"
+            "--lsp"))
+    (org-todo-keyword-faces
      ("TODO" :foreground "lightgrey" :weight bold)
      ("IN_PROGRESS" :foreground "greenyellow" :weight bold)
      ("REVIEW" :foreground "lightslateblue" :weight bold)
