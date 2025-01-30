@@ -69,14 +69,12 @@
 (use-package diminish)
 
 ;; completion system (see additions to the emacs package (below))
-(use-package
- vertico
- ;; :custom
- ;; (vertico-scroll-margin 0) ;; Different scroll margin
- ;; (vertico-count 20) ;; Show more candidates
- ;; (vertico-resize t) ;; Grow and shrink the Vertico minibuffer
- ;; (vertico-cycle t) ;; Enable cycling for `vertico-next/previous'
- :init (vertico-mode))
+;; :custom
+;; (vertico-scroll-margin 0) ;; Different scroll margin
+;; (vertico-count 20) ;; Show more candidates
+;; (vertico-resize t) ;; Grow and shrink the Vertico minibuffer
+;; (vertico-cycle t) ;; Enable cycling for `vertico-next/previous'
+(use-package vertico :init (vertico-mode))
 
 ;; END Look and Feel
 
@@ -239,6 +237,11 @@
  :hook (markdown-mode . auto-fill-mode))
 
 (use-package dockerfile-mode)
+
+(use-package
+ apptainer-mode
+ :ensure (:host github :repo "jrgant/apptainer-mode" :tag "v0.3")
+ :mode ("\\.def\\'" . apptainer-mode))
 
 (use-package
  wolfram-mode
