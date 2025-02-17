@@ -74,7 +74,24 @@
 ;; (vertico-count 20) ;; Show more candidates
 ;; (vertico-resize t) ;; Grow and shrink the Vertico minibuffer
 ;; (vertico-cycle t) ;; Enable cycling for `vertico-next/previous'
-(use-package vertico :init (vertico-mode))
+(use-package
+ vertico
+ :init (vertico-mode)
+ :custom
+ (vertico-count 20) ;; Show more candidates
+ (vertico-resize t) ;; Grow and shrink the Vertico minibuffer
+ )
+
+;; Optionally use the `orderless' completion style.
+(use-package
+ orderless
+ :custom
+ ;; Configure a custom style dispatcher (see the Consult wiki)
+ ;; (orderless-style-dispatchers '(+orderless-consult-dispatch orderless-affix-dispatch))
+ ;; (orderless-component-separator #'orderless-escapable-split-on-space)
+ (completion-styles '(orderless basic))
+ (completion-category-defaults nil)
+ (completion-category-overrides '((file (styles partial-completion)))))
 
 ;; END Look and Feel
 
@@ -186,6 +203,7 @@
  (eglot-autoshutdown 1)
  (eglot-report-progress nil)
  :config
+ (add-to-list 'eglot-server-programs '(fish-mode . ("fish-lsp" "start")))
  (add-to-list 'eglot-server-programs '(awk-mode . ("awk-language-server")))
  (add-to-list 'eglot-server-programs '(LaTeX-mode . ("texlab")))
  (let ((mode '(wolfram-mode :language-id "Wolfram Language"))
@@ -306,6 +324,10 @@
 
 (use-package geiser)
 (use-package geiser-chez :custom (geiser-chez-binary "chez"))
+(use-package geiser-guile)
+
+(use-package fish-mode)
+(use-package zig-mode)
 
 ;; END Programming Modes
 
@@ -458,6 +480,8 @@
          (disable-theme (car custom-enabled-themes))
          (load-theme 'zenburn t))))))
 
+ ;; Wayland remove title bar
+ (add-to-list 'default-frame-alist '(undecorated . t))
  :custom
  ;; Do not make backup ~ files
  (make-backup-files nil)
