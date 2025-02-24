@@ -1,4 +1,12 @@
-(defvar elpaca-installer-version 0.9)
+;;; load-elpaca.el --- -*- lexical-binding: t; -*-
+
+;;; Commentary:
+
+;; Elpaca loader, must be updated periodically.
+
+;;; Code:
+
+(defvar elpaca-installer-version 0.10)
 (defvar elpaca-directory (expand-file-name "elpaca/" user-emacs-directory))
 (defvar elpaca-builds-directory (expand-file-name "builds/" elpaca-directory))
 (defvar elpaca-repos-directory (expand-file-name "repos/" elpaca-directory))
@@ -21,7 +29,7 @@
      repo))
   (unless (file-exists-p repo)
     (make-directory repo t)
-    (when (< emacs-major-version 28)
+    (when (<= emacs-major-version 28)
       (require 'subr-x))
     (condition-case-unless-debug err
         (if-let* ((buffer (pop-to-buffer-same-window "*elpaca-bootstrap*"))
@@ -71,3 +79,5 @@
 
 
 (provide 'load-elpaca)
+
+;;; load-elpaca.el ends here
