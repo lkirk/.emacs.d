@@ -112,6 +112,13 @@
 ;; BEGIN: Programming Modes
 
 (use-package
+ elisp-mode
+ :ensure nil
+ :config
+ (when (boundp 'elisp-flymake-byte-compile-load-path)
+   (add-to-list 'elisp-flymake-byte-compile-load-path load-path)))
+
+(use-package
  cc-mode
  :ensure nil
  :hook
