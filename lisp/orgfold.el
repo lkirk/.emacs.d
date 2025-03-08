@@ -2,6 +2,20 @@
 
 ;;; Commentary:
 
+;; This package restores folding state from org mode files.  The one caveat is
+;; that if these files are changed at any point, all of the folding restore is
+;; out of sync.  There is no validation.  So, to combat this, I'll be version
+;; controlling my fold files so that the fold state is preserved across all of
+;; the machines I use Emacs on.  This was lifted from the internet... not sure
+;; where?  I'll find out at some point.  I modified it to use the undo-tree temp
+;; file naming scheme.
+
+;;
+;; Proof of concept implementation of saving folding information in
+;; org buffers.  This variant saves folding information in a separate
+;; file.
+;; 
+
 ;; Copyright (C) 2009-2022
 
 ;; This file is free software; you can redistribute it and/or modify
@@ -19,29 +33,10 @@
 ;; the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 ;; Boston, MA 02110-1301, USA.
 
-;;
-;; Proof of concept implementation of saving folding information in
-;; org buffers.  This variant saves folding information in a separate
-;; file.
-;; 
-
 ;;; Code:
 
 
-(defun make-fold-save-file-name (file)
-  "Create backup FILE to store the folt state of an org file."
-  (let* ((backup-directory-alist fold-directory-alist)
-         (name (make-backup-file-name-1 file)))
-    (concat (file-name-directory name) (file-name-nondirectory name) ".fold")))
-
-(setq fold-directory-alist '(("." . "~/.emacs.d/fold")))
-(defcustom text-mode-hook nil
-  "Directory in which to save org fold state."
-  :type 'string
-  :options '(turn-on-auto-fill flyspell-mode)
-  :group 'orgfole)
-
-(defcustom undo-tree-history-directory-alist nil
+(defcustom fold-directory-alist nil
   "Alist of filename patterns and fold state directory names.
 Each element looks like (REGEXP . DIRECTORY).  Undo history for
 files with names matching REGEXP will be saved in DIRECTORY.
@@ -68,42 +63,79 @@ ignored."
      (regexp :tag "Regexp matching filename")
      (directory :tag "Undo history directory name"))))
 
+(defun make-fold-save-file-name (file)
+  "Create backup FILE to store the folt state of an org file."
+  ;; If we've set the fold directory alist, use a relative path so that the
+  ;; external dir where we store storage paths can be version controlled
+  ;; without an explicit dependency on the absolute path.
+  ;; TODO: make this a config option?
+  (if fold-directory-alist
+      ;; use the same machinery as files.el for examining the fold dir alist
+      (let ((alist fold-directory-alist)
+            elt
+            backup-directory
+            abs-backup-directory)
+        (while alist
+          (setq elt (pop alist))
+          (if (string-match (car elt) file)
+              (setq
+               backup-directory (cdr elt)
+               alist nil)))
+        (when backup-directory
+          (let* ((backup-directory-alist fold-directory-alist)
+                 (name
+                  (make-backup-file-name-1
+                   (file-relative-name file backup-directory))))
+            (concat
+             (file-name-directory name)
+             "."
+             (file-name-nondirectory name)
+             ".fold"))))
+    (let* ((backup-directory-alist fold-directory-alist)
+           (name (make-backup-file-name-1 file)))
+      (concat
+       (file-name-directory name) "." (file-name-nondirectory name) ".fold"))))
 
 (defun orgfold-get-fold-info-file-name ()
-  "TODO: docs."
-  (concat (buffer-file-name) ".fold"))
+  "Get the filename of fold file, which only exists if the buffer has a filename."
+  (when buffer-file-name
+    (make-fold-save-file-name buffer-file-name)))
 
 (defun orgfold-save ()
-  "TODO: docs."
-  (save-excursion
-    (goto-char (point-min))
+  "Save the fold state to a fold file."
+  (let ((foldfile (orgfold-get-fold-info-file-name)))
+    (when foldfile
+      (save-excursion
+        (goto-char (point-min))
 
-    (let (foldstates)
-      (unless (looking-at outline-regexp)
-        (outline-next-visible-heading 1))
+        (let (foldstates)
+          (unless (looking-at outline-regexp)
+            (outline-next-visible-heading 1))
 
-      (while (not (eobp))
-        (push (when (seq-some
-                     (lambda (o) (overlay-get o 'invisible))
-                     (overlays-at (line-end-position)))
-                t)
-              foldstates)
-        (outline-next-visible-heading 1))
+          (while (not (eobp))
+            (push (when (seq-some
+                         (lambda (o) (overlay-get o 'invisible))
+                         (overlays-at (line-end-position)))
+                    t)
+                  foldstates)
+            (outline-next-visible-heading 1))
 
-      (with-temp-file (orgfold-get-fold-info-file-name)
-        (prin1 (nreverse foldstates) (current-buffer))))))
+          (with-temp-file foldfile
+            (prin1 (nreverse foldstates) (current-buffer))))))))
 
 (defun orgfold-restore ()
-  "TODO: docs."
+  "Restore fold states from the fold file if the fold file exists."
   (save-excursion
     (goto-char (point-min))
     (let* ((foldfile (orgfold-get-fold-info-file-name))
            (foldstates
-            (when (file-readable-p foldfile)
-              (with-temp-buffer
-                (insert-file-contents foldfile)
-                (when (> (buffer-size) 0)
-                  (read (current-buffer)))))))
+            (when foldfile
+              (if (file-readable-p foldfile)
+                  (with-temp-buffer
+                    (insert-file-contents foldfile)
+                    (when (> (buffer-size) 0)
+                      (read (current-buffer))))))))
+      ;; (message (format "could not read fold file: %s" foldfile))))))
 
       (when foldstates
         (show-all)
@@ -118,13 +150,11 @@ ignored."
 
           (outline-next-visible-heading 1))
 
-        (message "restored saved folding")))))
+        (message "restored folding")))))
 
-
-(add-hook 'org-mode-hook 'orgfold-activate)
 
 (defun orgfold-activate ()
-  "TODO: docs."
+  "Mode hook for orgfold saving."
   (orgfold-restore)
   (add-hook 'kill-buffer-hook 'orgfold-kill-buffer nil t))
 
