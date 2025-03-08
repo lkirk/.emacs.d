@@ -5,9 +5,15 @@ undo-tree/
 auto-save-list/
 transient/
 elisp-autofmt-cache/
+eln-cache/
 
+bookmarks
 history
+ielm-history.eld
 ido.last
 places
 recentf
 tramp
+org-roam.db
+.elpaca.lock
+.org-id-locations
