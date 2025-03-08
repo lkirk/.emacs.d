@@ -46,6 +46,14 @@
 
 (use-package evil-collection :after evil :config (evil-collection-init))
 
+(use-package
+ evil-org
+ :after org
+ :hook (org-mode . (lambda () evil-org-mode))
+ :config
+ (require 'evil-org-agenda)
+ (evil-org-agenda-set-keys))
+
 ;; TODO: debug diminish for some minor modes (eldoc, etc...)
 (use-package diminish)
 
