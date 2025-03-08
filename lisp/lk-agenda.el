@@ -6,6 +6,13 @@
 ;; from the org-roam database.  This code will query the index that org-roam
 ;; keeps to find files that are tagged with the '@project' or '@todo' tag.
 
+;; Adapted from the following blog post:
+;; https://www.d12frosted.io/posts/2021-01-16-task-management-with-roam-vol5
+;; I'm not doing any automatic tagging, however.
+;;
+;; I still need to customize the agenda view
+;;
+
 ;;; Code:
 
 
