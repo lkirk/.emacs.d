@@ -3,6 +3,9 @@ Description=Emacs: the extensible, self-documenting text editor
 
 [Service]
 Type=forking
+# This service is the only service that uses the lock
+# if the service fails, we want to remove the lock on startup
+ExecStartPre=/usr/bin/rm -f %h/.emacs.d/desktop/emacs.desktop.lock
 ExecStart=/usr/bin/emacs --daemon
 ExecStop=/usr/bin/emacsclient --eval "(kill-emacs)"
 Environment=SSH_AUTH_SOCK=%t/ssh-agent.socket
