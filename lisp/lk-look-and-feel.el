@@ -82,5 +82,7 @@
  (completion-category-defaults nil)
  (completion-category-overrides '((file (styles partial-completion)))))
 
+(set-face-attribute 'variable-pitch nil :font "Ubuntu")
+
 (provide 'lk-look-and-feel)
 ;;; lk-look-and-feel.el ends here
