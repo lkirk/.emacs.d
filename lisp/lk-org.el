@@ -9,6 +9,170 @@
 
 (setq fold-directory-alist '(("." . "~/roam/.fold")))
 
+;; Functionality for obtaining todo items from my projects and todo list
+;; from the org-roam database.  This code will query the index that org-roam
+;; keeps to find files that are tagged with the '@project' or '@todo' tag.
+
+;; Adapted from the following blog post:
+;; https://www.d12frosted.io/posts/2021-01-16-task-management-with-roam-vol5
+;; I'm not doing any automatic tagging, however.
+;;
+;; I still need to customize the agenda view
+
+(defun todo-files ()
+  "Return a list of files with todo items (@project/@todo tags)."
+  (seq-uniq
+   (seq-map
+    #'car
+    (org-roam-db-query
+     [:select
+      [nodes:file]
+      :from tags
+      :left-join nodes
+      :on (= tags:node-id nodes:id)
+      :where
+      (or (like tag ' "%\"@project\"%") (like tag ' "%\"@todo\"%"))]))))
+
+
+(defun todo-files-update (&rest _)
+  "Update the value of `variable:org-agenda-files'."
+  (setq org-agenda-files (todo-files)))
+
+(advice-add 'org-agenda :before #'todo-files-update)
+(advice-add 'org-todo-list :before #'todo-files-update)
+
+
+(defun org-file-map-headlines (file func)
+  "Read an org FILE and map a FUNC to its headlines."
+  (with-temp-buffer
+    (insert-file-contents file)
+    (org-mode)
+    (org-element-map (org-element-parse-buffer 'headline) 'headline func)))
+
+
+(defun timestamp-in-p (org-ts lower upper)
+  "Test if the org timestamp, ORG-TS is in LOWER and UPPER."
+  (let ((diff-days
+         (time-to-number-of-days
+          (time-subtract (org-timestamp-to-time org-ts) (current-time)))))
+    (and (<= diff-days upper) (> diff-days lower))))
+
+(defun get-timestamp-plist (h t-props)
+  "Get timestamp values from heading H, given T-PROPS."
+  (seq-mapcat
+   (lambda (p)
+     (let ((v (org-element-property p h)))
+       (if v
+           `(,p ,v)
+         v)))
+   t-props))
+
+;; (defun headline-in-time-range (h range t-props)
+;;   "Test if headline H has a timestamp in RANGE.
+;; RANGE is specified units of days.  Negative values must be specified by the
+;; caller.  T-PROPS are the properties in the plist that store the timestamps"
+;;   (seq-some
+;;    (lambda (p)
+;;      (timestamp-in-p (org-element-property p h) (car range) (cadr range)))
+;;    t-props))
+
+(defun any-in-time-range-p (plist range t-props)
+  "Test if any member of PLIST has a timestamp in RANGE.
+RANGE is specified units of days.  Negative values must be specified by the
+caller.  T-PROPS are the properties in the plist that store the timestamps"
+  (seq-some
+   (lambda (p)
+     (timestamp-in-p (plist-get plist p) (car range) (cadr range)))
+   t-props))
+
+(setq todos-dblock-time-props '(:closed :deadline :scheduled))
+
+(defun get-todo-items (file &optional todo-states todo-tags time-range)
+  "Given the input FILE, parse todo headlines and their inherited tags.
+If TODO-STATES is specified, filter based on the state.  If TODO-TAGS is
+specified, we should keep only todo items with these tags.  If TIME-RANGE
+is specified, then if the timestamps of one of 'todos-dblock-time-props'
+are in the range, then the todos will be kept."
+  (let ((states (or todo-states (car org-todo-keywords)))
+        (t-props todos-dblock-time-props))
+    (org-file-map-headlines
+     file
+     (lambda (h)
+       (let* ((todo (org-element-property :todo-keyword h))
+              (title (org-element-property :title h))
+              (tags (org-get-tags h))
+              (has-tags (or (null todo-tags) (seq-intersection todo-tags tags)))
+              (t-stamps (get-timestamp-plist h t-props))
+              (in-time-range
+               (or (null time-range)
+                   (any-in-time-range-p t-stamps time-range t-props)))
+              (has-state (member todo states)))
+         (when (and has-tags has-state in-time-range)
+           (append `(:state ,todo :title ,title :tags ,tags) t-stamps)))))))
+
+;; TODO: perhaps it's possible to generate these with some sort of
+;;       constructor?
+;; https://orgmode.org/worg/dev/org-element-api.html
+(defun format-todo-entries (todos level)
+  "Create a newline separated string containing all todos.
+TODOS is a list of plists with keys ':state' and ':level'.
+New headlines are created with the specified LEVEL."
+  (let ((entry-fmt
+         (lambda (s)
+           (let ((ts-kw (car (seq-intersection s todos-dblock-time-props))))
+             (format "%s %s %s (%s:%s)"
+                     (make-string level ?*)
+                     (plist-get s :state)
+                     (plist-get s :title)
+                     ts-kw
+                     (org-element-property :raw-value (plist-get s ts-kw)))))))
+    (string-join (seq-map entry-fmt todos) "\n")))
+
+
+(defun format-todo-sections (todos level)
+  "Given a list of TODOS, sort and group by tags, then format.
+This will return a list of blocks of text to insert.  The LEVEL argument
+will describe the level at which headlines should be generated."
+  (seq-map
+   (lambda (group)
+     (format "%s %s\n%s"
+             (make-string level ?*)
+             (string-join (car group) ":")
+             (format-todo-entries (cdr group) (+ 1 level))))
+   (seq-group-by (lambda (t) (plist-get t :tags)) (sort-todos todos))))
+
+(defun get-current-headline-level ()
+  "Get the headline level of the current element under cursor."
+  (let ((curr-hline (org-element-lineage (org-element-at-point) '(headline) t)))
+    (org-element-property :level curr-hline)))
+
+(defun org-dblock-write:todos (params)
+  "Insert all exported todo items from the specified files.
+PARAMS is a plist with ':files' to find todos in (default is 'org-agenda-files',
+':states' for todo states to consider (default all), and ':tags' specifying
+the todo tags to consider (among all inherited tags).
+
+
+Here's an example of a dynamic block with all of the options
+#+BEGIN: todos :files (\"todo.org\") :tags (\"@todo\") :states (\"DONE\")
+
+But, if the defaults are desired, the dynamic block is simply:
+#+BEGIN: todos"
+  (message "RUNNING TODOS DBLOCK")
+  (let* ((files (or (plist-get params :files) org-agenda-files))
+         (states (or (plist-get params :states) (car org-todo-keywords)))
+         (tags (plist-get params :tags))
+         (level (+ 1 (get-current-headline-level)))
+         (time-range (plist-get params :time))
+         (todos
+          (seq-mapcat
+           (lambda (f) (get-todo-items f states tags time-range)) files)))
+    (insert (string-join (format-todo-sections todos level) "\n"))))
+:deadline
+:scheduled
+:closed
+(advice-add 'org-dblock-write:todos :before #'todo-files-update)
+
 (use-package
  org
  :init
@@ -106,7 +270,6 @@
  ;; use inheritance so that I can link attachments in any part of the file
  :custom (org-attach-use-inheritance t))
 
-
 (use-package
  org-present
  :after org
@@ -125,36 +288,6 @@
     (org-remove-inline-images)
     (org-present-show-cursor)
     (org-present-read-write))))
-
-(defun org-dblock-write:todos (params)
-  "Insert TODO items from an external file dynamically.
-PARAMS provide the filename to pull from."
-  (let*
-      ((file (plist-get params :file)) ;; Set default file
-       (todo-states (or (plist-get params :todo) (car org-todo-keywords)))
-       (todos "")
-       (hline
-        (make-string
-         (+ (org-element-property
-             :level
-             (org-element-lineage (org-element-at-point) '(headline) t))
-            1)
-         ?*)))
-    (with-temp-buffer
-      (insert-file-contents file)
-      (org-mode)
-      (org-element-map
-       (org-element-parse-buffer 'headline) 'headline
-       (lambda (h)
-         (let ((todo (org-element-property :todo-keyword h))
-               (title (org-element-property :raw-value h)))
-           (when (member todo todo-states)
-             (setq
-              todos
-              (if (string-empty-p todos)
-                  (format "%s %s %s" hline todo title) ;; First entry: no newline
-                (concat todos (format "\n%s %s %s" hline todo title)))))))))
-    (insert todos)))
 
 
 ;; The main goal of this code is to identify files that are linked to a single
