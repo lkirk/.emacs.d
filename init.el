@@ -16,7 +16,6 @@
 (require 'use-package-ensure)
 (setq use-package-always-ensure t)
 
-(require 'lk-agenda)
 (require 'lk-look-and-feel)
 (require 'lk-dev)
 (require 'lk-prog)
