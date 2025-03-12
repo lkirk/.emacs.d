@@ -136,7 +136,7 @@ New headlines are created with the specified LEVEL."
     (string-join (seq-map entry-fmt todos) "\n")))
 
 (defun sort-todos (todos)
-  "Sort TODOS first by title, then todo state."
+  "Sort TODOS first by todo state, then by title."
   (seq-sort
    (lambda (l r)
      (let ((state-l (plist-get l :state))
