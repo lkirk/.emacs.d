@@ -31,8 +31,9 @@
       :left-join nodes
       :on (= tags:node-id nodes:id)
       :where
+      ;; (defun blabla (a) `(or ,@(seq-map (lambda (b) (= b a)) '(1 2 3 4 5)))
+      ;; `(or (like tag (seq-map (lambda (t) '(format "%%\"%s\"%%" t) '("@project" "@todo")))))]))))
       (or (like tag ' "%\"@project\"%") (like tag ' "%\"@todo\"%"))]))))
-
 
 (defun todo-files-update (&rest _)
   "Update the value of `variable:org-agenda-files'."
@@ -41,14 +42,12 @@
 (advice-add 'org-agenda :before #'todo-files-update)
 (advice-add 'org-todo-list :before #'todo-files-update)
 
-
 (defun org-file-map-headlines (file func)
   "Read an org FILE and map a FUNC to its headlines."
   (with-temp-buffer
     (insert-file-contents file)
     (org-mode)
     (org-element-map (org-element-parse-buffer 'headline) 'headline func)))
-
 
 (defun timestamp-in-p (org-ts lower upper)
   "Test if the org timestamp, ORG-TS is in LOWER and UPPER."
@@ -128,7 +127,6 @@ New headlines are created with the specified LEVEL."
                      (org-element-property :raw-value (plist-get s ts-kw)))))))
     (string-join (seq-map entry-fmt todos) "\n")))
 
-
 (defun format-todo-sections (todos level)
   "Given a list of TODOS, sort and group by tags, then format.
 This will return a list of blocks of text to insert.  The LEVEL argument
@@ -152,9 +150,9 @@ PARAMS is a plist with ':files' to find todos in (default is 'org-agenda-files',
 ':states' for todo states to consider (default all), and ':tags' specifying
 the todo tags to consider (among all inherited tags).
 
-
 Here's an example of a dynamic block with all of the options
-#+BEGIN: todos :files (\"todo.org\") :tags (\"@todo\") :states (\"DONE\")
+#+BEGIN: todos :files (\"todo.org\") :tags (\"@todo\") :states (\"DONE\") \
+:time (-7 14)
 
 But, if the defaults are desired, the dynamic block is simply:
 #+BEGIN: todos"
@@ -182,12 +180,13 @@ But, if the defaults are desired, the dynamic block is simply:
    (async-shell-command
     ;; NB org strips off zotero:
     (concat "xdg-open zotero:" (shell-quote-argument url) " & disown")))
- :custom
 
+ ;; :bind ("C-c C-p" . org-present)
+ :custom
  ;; LaTeX preview settings
  (org-preview-latex-default-process 'dvisvgm)
  (org-latex-create-formula-image-program 'dvisvgm)
-
+ (org-log-done 'time)
  (org-startup-with-inline-images t)
  (org-highlight-latex-and-related '(latex))
  (org-hide-macro-markers 1)
@@ -227,14 +226,28 @@ But, if the defaults are desired, the dynamic block is simply:
  (org-roam-graph-link-hidden-types '("file" "http" "https" "zotero"))
  (org-roam-complete-everywhere t)
  (org-roam-dailies-capture-templates
-  '(("d" "default" entry "* %?"
-     :target
-     (file+head "%<%Y-%m-%d>.org" :head "#+title: %<%Y-%m-%d>\n"))
+  '(("d"
+     "default"
+     entry
+     "* %?"
+     :target (file+head "%<%Y-%m-%d>.org" :head "#+title: %<%Y-%m-%d>\n"))
     ("w" "weekly" plain ""
      :target
      (file+head
       "weekly/%<%Y-%V>.org"
-      "#+title: Weekly Meeting %<%Y-%V>\n* Goals for last week\n\n** \n\n* Issues\n\n** \n\n* Goals for this week\n\n** ")
+      "\
+#+title: Weekly Meeting %<%Y-%V>
+* Goals for last week\n
+** \n
+* Issues\n
+** \n
+* Goals for this week\n
+** \n
+* Tasks and Timeline
+
+#+BEGIN: todos :time (-7 14) :tags (\"@tskit\" \"@weekly\")
+#+END:
+")
      :unnarrowed t)
     ("t"
      "todo"
@@ -288,6 +301,27 @@ But, if the defaults are desired, the dynamic block is simply:
     (org-remove-inline-images)
     (org-present-show-cursor)
     (org-present-read-write))))
+
+;; (defun lk/presentation-setup ()
+;;   (setq text-scale-mode-amount 3)
+;;   (org-display-inline-images)
+;;   (text-scale-mode 1))
+;; (defun lk/presentation-end ()
+;;   (text-scale-mode 0))
+
+;; (use-package
+;;  org-tree-slide
+;;  ;; :hook
+;;  ;; ((org-tree-slide-play . lk/presentation-setup)
+;;  ;;  (org-tree-slide-stop . lk/presentation-end))
+;;  :custom
+;;  (org-tree-slide-skip-outline-level 2)
+;;  (org-tree-slide-in-effect t)
+;;  (org-tree-slide-activate-message "Presentation started!")
+;;  (org-tree-slide-deactivate-message "Presentation finished!")
+;;  (org-tree-slide-header t)
+;;  (org-tree-slide-breadcrumbs " > ")
+;;  (org-image-actual-width nil))
 
 
 ;; The main goal of this code is to identify files that are linked to a single
