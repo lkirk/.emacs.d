@@ -19,6 +19,10 @@
 ;;
 ;; I still need to customize the agenda view
 
+;; Define these toplevel tags (@project/@todo), useful for finding the files
+;; associated with todo items to be collected. We can narrow these down further
+;; by adding tags either to the toplevel of the file or to the todo items
+;; themselves
 (defun todo-files ()
   "Return a list of files with todo items (@project/@todo tags)."
   (seq-uniq
@@ -107,7 +111,9 @@ are in the range, then the todos will be kept."
                    (any-in-time-range-p t-stamps time-range t-props)))
               (has-state (member todo states)))
          (when (and has-tags has-state in-time-range)
-           (append `(:state ,todo :title ,title :tags ,tags) t-stamps)))))))
+           (append
+            `(:state ,todo :title ,title :tags ,tags :file ,file)
+            t-stamps)))))))
 
 ;; TODO: perhaps it's possible to generate these with some sort of
 ;;       constructor?
@@ -119,13 +125,27 @@ New headlines are created with the specified LEVEL."
   (let ((entry-fmt
          (lambda (s)
            (let ((ts-kw (car (seq-intersection s todos-dblock-time-props))))
-             (format "%s %s %s (%s:%s)"
+             (format "%s %s [[file:%s::*%s][%s]] (%s:%s)"
                      (make-string level ?*)
                      (plist-get s :state)
+                     (plist-get s :file)
+                     (plist-get s :title)
                      (plist-get s :title)
                      ts-kw
                      (org-element-property :raw-value (plist-get s ts-kw)))))))
     (string-join (seq-map entry-fmt todos) "\n")))
+
+(defun sort-todos (todos)
+  "Sort TODOS first by title, then todo state."
+  (seq-sort
+   (lambda (l r)
+     (let ((state-l (plist-get l :state))
+           (state-r (plist-get r :state))
+           (title-l (plist-get l :title))
+           (title-r (plist-get r :title)))
+       (or (string< state-l state-r)
+           (and (string= state-l state-r) (string< title-l title-r)))))
+   todos))
 
 (defun format-todo-sections (todos level)
   "Given a list of TODOS, sort and group by tags, then format.
