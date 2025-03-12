@@ -7,7 +7,14 @@
 
 (require 'orgfold)
 
-(setq fold-directory-alist '(("." . "~/roam/.fold")))
+(defun pjoin (&rest p)
+  "Join file paths P."
+  (apply #'concat
+         (append (seq-map #'file-name-as-directory (butlast p)) (last p))))
+
+(setq org-roam-directory "~/roam")
+(setq org-roam-dailies-directory (pjoin org-roam-directory "daily"))
+(setq fold-directory-alist `(("." . ,(pjoin org-roam-directory ".fold"))))
 
 ;; Functionality for obtaining todo items from my projects and todo list
 ;; from the org-roam database.  This code will query the index that org-roam
@@ -237,12 +244,10 @@ But, if the defaults are desired, the dynamic block is simply:
  org-roam
  :after org
  :init
- (unless (file-exists-p "~/roam")
-   (make-directory "~/roam"))
+ (unless (file-exists-p org-roam-directory)
+   (make-directory org-roam-directory))
  :hook (org-capture-mode-hook . org-fold-hide-drawer-all)
  :custom
- (org-roam-directory "~/roam")
- (org-roam-dailies-directory "~/roam/daily")
  (org-roam-graph-link-hidden-types '("file" "http" "https" "zotero"))
  (org-roam-complete-everywhere t)
  (org-roam-dailies-capture-templates
