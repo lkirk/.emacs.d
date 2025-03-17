@@ -48,16 +48,10 @@
   'org-babel-load-languages
   '((shell . t) (python . t) (julia . t) (C . t) (latex . t) (R . t)))
  (org-zotero-setup-links)
- ;; (org-link-set-parameters
- ;;  "zotero"
- ;;  :complete #'org-zotero-link-complete
- ;;  :insert-description #'org-zotero-link-insert-description
- ;;  :follow #'org-zotero-open)
  :hook
  (org-mode . auto-fill-mode)
  (org-mode . orgfold-activate)
  (org-mode . org-fold-hide-drawer-all)) ;; always hide drawer
-;; (org-mode . org-beamer-export-to-pdf))
 
 (use-package
  org-roam
@@ -65,7 +59,7 @@
  :init
  (unless (file-exists-p org-roam-directory)
    (make-directory org-roam-directory))
- ;; :hook (org-capture-mode-hook . org-fold-hide-drawer-all)
+ :hook (org-capture-mode-hook . org-fold-hide-drawer-all)
  :custom
  (org-roam-graph-link-hidden-types '("file" "http" "https" "zotero"))
  (org-roam-complete-everywhere t)
@@ -98,8 +92,7 @@
      entry
      "* TODO %?"
      :target (file+datetree "todo.org" week)
-     :empty-lines-before 1
-     :unnarrowed t)
+     :empty-lines-before 1)
     ("l"
      "links"
      entry
