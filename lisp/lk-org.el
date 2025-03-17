@@ -41,6 +41,7 @@
     ;; ("DONE" . (:foreground org-done :weight bold))
     ("CANCELLED" . (:foreground "grey50" :weight bold))))
  (org-zotero-db-path "~/Zotero/zotero.sqlite")
+ (org-confirm-babel-evaluate nil)
  :config
  (plist-put org-format-latex-options :scale .8)
  (org-babel-do-load-languages
