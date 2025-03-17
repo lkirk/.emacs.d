@@ -28,27 +28,38 @@
    :insert-description #'org-zotero-link-insert-description
    :follow #'org-zotero-open))
 
+(defmacro org-zotero-with-temp-db (connection-spec &rest body)
+  "Create a copy of the zotero db, deleting after executing the BODY.
+This is necessary because the zotero db is locked when zotero is running.
+CONNECTION-SPEC establishes the db binding."
+  (declare (indent 1))
+  `(let* ((orig org-zotero-db-path)
+          (org-zotero-db-path (make-temp-file "zotero" nil ".sqlite")))
+     (unwind-protect
+         (progn
+           (copy-file orig org-zotero-db-path t)
+           (emacsql-with-connection ,connection-spec ,@body))
+       (delete-file org-zotero-db-path))))
+
 (defun org-zotero-get-items ()
   "Query the zotero db and return an alist of (id . title) entries."
   (let
       ((items
-        (emacsql-with-connection
-         (db (emacsql-sqlite-open org-zotero-db-path))
-         (emacsql db [:pragma (= query-only on)])
-         (emacsql
-          db
-          [:select
-           ;; format the title as a string so that it's not output as a lisp symbol
-           [(funcall printf ' "\"%s\"" items:key)
-            (funcall printf ' "\"%s\"" itemDataValues:value)]
-           :from itemAttachments
-           :inner-join itemData
-           :on (= itemData:itemID itemAttachments:parentItemID)
-           :inner-join itemDataValues
-           :on (= itemDataValues:valueID itemData:valueID)
-           :inner-join items
-           :on (= items:itemID itemAttachments:itemID)
-           :and (= itemData:fieldID 1)]))))
+        (org-zotero-with-temp-db (db (emacsql-sqlite-open org-zotero-db-path))
+          (emacsql
+           db
+           [:select
+            ;; format the title as a string so that it's not output as a lisp symbol
+            [(funcall printf ' "\"%s\"" items:key)
+             (funcall printf ' "\"%s\"" itemDataValues:value)]
+            :from itemAttachments
+            :inner-join itemData
+            :on (= itemData:itemID itemAttachments:parentItemID)
+            :inner-join itemDataValues
+            :on (= itemDataValues:valueID itemData:valueID)
+            :inner-join items
+            :on (= items:itemID itemAttachments:itemID)
+            :and (= itemData:fieldID 1)]))))
     (seq-map
      (lambda (row)
        (seq-let [id title] row
@@ -78,12 +89,13 @@ be overwritten."
          (sel-id (car (rassoc sel-title zot-items))))
     (concat org-zotero-link-prefix sel-id)))
 
+
+;; still a parent process of Emacs if opened for the first time
+;; this is a bit tricky for some reason. This works well for now.
 (defun org-zotero-open (url)
   "Visit the zotero link to a pdf referenced by the URL.
 The link should look like: zotero://open-pdf/library/items/3A2XZNUW"
-  (async-shell-command
-   ;; NB org strips off zotero:
-   (concat "xdg-open zotero:" (shell-quote-argument url) " & disown")))
+  (start-process "zotero" nil "setsid" "xdg-open" (concat "zotero:" url)))
 
 (provide 'lk-org-zotero)
 ;;; lk-org-zotero.el ends here
