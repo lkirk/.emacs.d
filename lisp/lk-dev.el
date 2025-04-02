@@ -62,41 +62,101 @@
 ;; (use-package poly-markdown)
 ;; (use-package poly-noweb)
 
+;; (use-package
+;;  flycheck
+;;  :config (global-flycheck-mode)
+;;  :bind
+;;  (:map
+;;   flycheck-mode-map
+;;   ("C-c n" . flycheck-next-error)
+;;   ("C-c N" . flycheck-previous-error)))
+
+;; ;; https://emacs-lsp.github.io/lsp-mode/tutorials/how-to-turn-off/
+;; (use-package
+;;  lsp-mode
+;;  :commands (lsp lsp-deferred)
+;;  :hook
+;;  ((prog-mode . lsp-deferred) (lsp-mode . lsp-enable-which-key-integration))
+;;  :custom
+;;  (lsp-headerline-breadcrumb-enable nil)
+;;  (lsp-enable-folding nil)
+;;  (lsp-enable-links nil)
+;;  (lsp-enable-snippet nil)
+;;  (lsp-warn-no-matched-clients nil)
+;;  (lsp-keep-workspace-alive nil)
+;;  :bind
+;;  (:map
+;;   lsp-mode-map
+;;   ("C-c C-j" . xref-find-definitions)
+;;   ("C-c C-k" . xref-find-references))
+;;  :hook
+;;  (before-save . lsp-format-buffer)
+;;  (before-save . lsp-organize-imports))
+
+;; (use-package
+;;  lsp-pyright
+;;  :custom (lsp-pyright-langserver-command "basedpyright")
+;;  :hook (python-mode . (lambda () (require 'lsp-pyright))))
+
+
 (use-package
- flycheck
- :config (global-flycheck-mode)
+ flymake
+ :ensure nil
+ :hook (prog-mode . flymake-mode)
  :bind
  (:map
-  flycheck-mode-map
-  ("C-c n" . flycheck-next-error)
-  ("C-c N" . flycheck-previous-error)))
+  flymake-mode-map
+  ("C-c n" . flymake-goto-next-error)
+  ("C-c N" . flymake-goto-prev-error)))
 
-;; https://emacs-lsp.github.io/lsp-mode/tutorials/how-to-turn-off/
 (use-package
- lsp-mode
- :commands (lsp lsp-deferred)
+ eglot
+ :init
+ (defun my/format-on-save ()
+   "Format buffer if not in `cc-mode`."
+   ;; Disable so that I can use clang-format in tskit development
+   (unless (or (string-match "repo/tskit" buffer-file-name)
+               (derived-mode-p 'wolfram-mode))
+     (when (eglot-managed-p) ;; prevent jsonrpc errors
+       (eglot-format))))
+ :ensure t
  :hook
- ((prog-mode . lsp-deferred) (lsp-mode . lsp-enable-which-key-integration))
+ (prog-mode . eglot-ensure)
+ (before-save . my/format-on-save)
  :custom
- (lsp-headerline-breadcrumb-enable nil)
- (lsp-enable-folding nil)
- (lsp-enable-links nil)
- (lsp-enable-snippet nil)
- (lsp-warn-no-matched-clients nil)
- (lsp-keep-workspace-alive nil)
+ (eglot-autoshutdown 1)
+ (eglot-report-progress nil)
+ :config
+ (add-to-list 'eglot-server-programs '(fish-mode . ("fish-lsp" "start")))
+ (add-to-list 'eglot-server-programs '(awk-mode . ("awk-language-server")))
+ (add-to-list 'eglot-server-programs '(LaTeX-mode . ("texlab")))
+ (let ((mode '(wolfram-mode :language-id "Wolfram Language"))
+       ;; (wolfram-lsp-cmd '("wolframscript" "-code"
+       ;;                    "Needs[\"LSPServer`\"];LSPServer`StartServer[]")))
+       (wolfram-lsp-cmd
+        '("WolframKernel"
+          "-noinit"
+          "-noprompt"
+          "-nopaclet"
+          "-noicon"
+          "-nostartuppaclets"
+          "-run"
+          "Needs[\"LSPServer`\"];LSPServer`StartServer[]")))
+   (add-to-list 'eglot-server-programs (cons mode wolfram-lsp-cmd)))
+ (setq-default eglot-workspace-configuration
+               '(:texlab
+                 (:experimental
+                  (:verbatimEnvironments ["julia"])
+                  :auxDirectory "./build"
+                  :chktex (:onEdit t :onOpenAndSave t)
+                  :formatterLineLength 80
+                  :latexFormatter "latexindent"
+                  :latexindent (:modifyLineBreaks t))))
  :bind
  (:map
-  lsp-mode-map
+  eglot-mode-map
   ("C-c C-j" . xref-find-definitions)
-  ("C-c C-k" . xref-find-references))
- :hook
- (before-save . lsp-format-buffer)
- (before-save . lsp-organize-imports))
-
-(use-package
- lsp-pyright
- :custom (lsp-pyright-langserver-command "basedpyright")
- :hook (python-mode . (lambda () (require 'lsp-pyright))))
+  ("C-c C-k" . xref-find-references)))
 
 (use-package rainbow-mode)
 

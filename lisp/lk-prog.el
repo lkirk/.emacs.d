@@ -37,7 +37,7 @@
  julia-mode
  :after ess
  :mode ("\\.jl\\'" . julia-mode)
- ;; :hook (julia-mode . eglot-jl-init)
+ :hook (julia-mode . eglot-jl-init)
  :custom (tab-width 4))
 
 ;; (use-package
@@ -52,11 +52,11 @@
 ;;  :custom (eat-kill-buffer-on-exit t)
 ;;  :hook (eshell-load . eat-eshell-mode))
 
-;; (use-package
-;;  eglot-jl
-;;  :after eglot
-;;  :commands eglot-jl-init
-;;  :custom (tab-width 4))
+(use-package
+ eglot-jl
+ :after eglot
+ :commands eglot-jl-init
+ :custom (tab-width 4))
 
 (use-package julia-vterm)
 ;; :custom (julia-vterm-repl-program "julia --project=@."))
@@ -68,6 +68,13 @@
  (defalias
    'org-babel-variable-assignments:julia
    'org-babel-variable-assignments:julia-vterm))
+
+;; (use-package
+;;  ess-julia-mode
+;;  :ensure nil
+;;  :custom (inferior-julia-args "--project=@. "))
+
+;; (use-package lsp-julia)
 
 (use-package
  systemd
@@ -81,65 +88,6 @@
 (use-package nix-mode :mode "\\.nix\\'")
 
 (use-package eldoc :diminish eldoc-mode :ensure nil :config (global-eldoc-mode))
-
-;; (use-package
-;;  flymake
-;;  :ensure nil
-;;  :hook (prog-mode . flymake-mode)
-;;  :bind
-;;  (:map
-;;   flymake-mode-map
-;;   ("C-c n" . flymake-goto-next-error)
-;;   ("C-c N" . flymake-goto-prev-error)))
-
-;; (use-package
-;;  eglot
-;;  :init
-;;  (defun my/format-on-save ()
-;;    "Format buffer if not in `cc-mode`."
-;;    ;; Disable so that I can use clang-format in tskit development
-;;    (unless (or (string-match "repo/tskit" buffer-file-name)
-;;                (derived-mode-p 'wolfram-mode))
-;;      (when (eglot-managed-p) ;; prevent jsonrpc errors
-;;        (eglot-format))))
-;;  :ensure t
-;;  :hook
-;;  (prog-mode . eglot-ensure)
-;;  (before-save . my/format-on-save)
-;;  :custom
-;;  (eglot-autoshutdown 1)
-;;  (eglot-report-progress nil)
-;;  :config
-;;  (add-to-list 'eglot-server-programs '(fish-mode . ("fish-lsp" "start")))
-;;  (add-to-list 'eglot-server-programs '(awk-mode . ("awk-language-server")))
-;;  (add-to-list 'eglot-server-programs '(LaTeX-mode . ("texlab")))
-;;  (let ((mode '(wolfram-mode :language-id "Wolfram Language"))
-;;        ;; (wolfram-lsp-cmd '("wolframscript" "-code"
-;;        ;;                    "Needs[\"LSPServer`\"];LSPServer`StartServer[]")))
-;;        (wolfram-lsp-cmd
-;;         '("WolframKernel"
-;;           "-noinit"
-;;           "-noprompt"
-;;           "-nopaclet"
-;;           "-noicon"
-;;           "-nostartuppaclets"
-;;           "-run"
-;;           "Needs[\"LSPServer`\"];LSPServer`StartServer[]")))
-;;    (add-to-list 'eglot-server-programs (cons mode wolfram-lsp-cmd)))
-;;  (setq-default eglot-workspace-configuration
-;;                '(:texlab
-;;                  (:experimental
-;;                   (:verbatimEnvironments ["julia"])
-;;                   :auxDirectory "./build"
-;;                   :chktex (:onEdit t :onOpenAndSave t)
-;;                   :formatterLineLength 80
-;;                   :latexFormatter "latexindent"
-;;                   :latexindent (:modifyLineBreaks t))))
-;;  :bind
-;;  (:map
-;;   eglot-mode-map
-;;   ("C-c C-j" . xref-find-definitions)
-;;   ("C-c C-k" . xref-find-references)))
 
 (use-package
  ruff-format
@@ -220,11 +168,6 @@
  :ensure nil
  :custom (inferior-R-args "--no-restore-history --no-save "))
 
-;; (use-package
-;;  ess-julia-mode
-;;  :ensure nil
-;;  :custom (inferior-julia-args "--project=@. "))
-
 (use-package clojure-mode :defer t)
 (use-package cider :defer t)
 
@@ -234,8 +177,6 @@
 
 (use-package fish-mode)
 (use-package zig-mode)
-
-(use-package lsp-julia)
 
 (provide 'lk-prog)
 ;;; lk-prog.el ends here
