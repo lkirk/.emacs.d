@@ -11,7 +11,6 @@
 ;; 
 
 ;;; Code:
-;; "~/Zotero/zotero.sqlite"
 
 (defcustom org-zotero-db-path nil
   "Path to Zotero sqlite database."
@@ -65,6 +64,9 @@ CONNECTION-SPEC establishes the db binding."
        (seq-let [id title] row
          `(,id . ,title)))
      items)))
+
+;; for group links, see:
+;; https://github.com/mhucka/zowie/blob/92a5bf6/zowie/zotero.py#L178C1-L189C1
 
 (setq org-zotero-link-prefix "zotero://open-pdf/library/items/")
 
