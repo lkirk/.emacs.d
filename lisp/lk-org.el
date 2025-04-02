@@ -6,7 +6,8 @@
 
 (require 'orgfold)
 (require 'lk-org-extensions)
-(require 'lk-org-zotero)
+;; (require 'lk-org-zotero)
+(require 'lk-org-papis)
 
 (defun pjoin (&rest p)
   "Join file paths P."
@@ -20,6 +21,7 @@
 
 (use-package
  org
+ :after julia-vterm
  ;; :bind ("C-c C-p" . org-present)
  :custom
  ;; LaTeX preview settings
@@ -29,7 +31,9 @@
  (org-startup-with-inline-images t)
  (org-highlight-latex-and-related '(latex))
  (org-hide-macro-markers 1)
- (org-src-tab-acts-natively nil)
+ ;; (org-src-preserve-indentation t)
+ ;; (org-src-tab-acts-natively t)
+ (org-src-tab-fontify-natively t)
  (org-return-follows-link t)
  (org-todo-keywords
   '((sequence "TODO" "IN_PROGRESS" "REVIEW" "|" "DONE" "CANCELLED")))
@@ -40,19 +44,29 @@
     ;; hm, org-done invalid, just leave unset
     ;; ("DONE" . (:foreground org-done :weight bold))
     ("CANCELLED" . (:foreground "grey50" :weight bold))))
- (org-zotero-db-path "~/Zotero/zotero.sqlite")
+ ;; (org-zotero-db-path "~/Zotero/zotero.sqlite")
  (org-confirm-babel-evaluate nil)
+ (org-babel-julia-command "julia --project=@.")
+ (org-agenda-custom-commands
+  '(("c" "Custom Agenda"
+     ((agenda "" ((org-deadline-warning-days 0)))
+      (tags "@project")
+      (tags "@todo")))))
  :config
+ (add-to-list 'org-src-lang-modes '("eidos" . eidos))
  (plist-put org-format-latex-options :scale .8)
  (org-babel-do-load-languages
   'org-babel-load-languages
-  '((shell . t) (python . t) (julia . t) (C . t) (latex . t) (R . t)))
- (org-zotero-setup-links)
+  '((shell . t)
+    (python . t)
+    ;; (julia . t)
+    (C . t) (latex . t) (R . t) (julia-vterm . t)))
+ ;; (org-zotero-setup-links)
+
  :hook
  (org-mode . auto-fill-mode)
  (org-mode . orgfold-activate)
  (org-mode . org-fold-hide-drawer-all)) ;; always hide drawer
-
 (use-package
  org-roam
  :after org
@@ -61,7 +75,8 @@
    (make-directory org-roam-directory))
  :hook (org-capture-mode-hook . org-fold-hide-drawer-all)
  :custom
- (org-roam-graph-link-hidden-types '("file" "http" "https" "zotero"))
+ ;; (org-roam-graph-link-hidden-types '("file" "http" "https" "zotero"))
+ (org-roam-graph-link-hidden-types '("file" "http" "https" "papis"))
  (org-roam-complete-everywhere t)
  (org-roam-dailies-capture-templates
   '(("d"
@@ -74,18 +89,18 @@
      (file+head
       "weekly/%<%Y-%V>.org"
       "\
- #+title: Weekly Meeting %<%Y-%V>
- * Goals for last week\n
- ** \n
- * Issues\n
- ** \n
- * Goals for this week\n
- ** \n
- * Tasks and Timeline
+#+title: Weekly Meeting %<%Y-%V>
+* Goals for last week\n
+** \n
+* Issues\n
+** \n
+* Goals for this week\n
+** \n
+* Tasks and Timeline
 
- #+BEGIN: todos :time (-7 14) :tags (\"@tskit\" \"@weekly\")
- #+END:
- ")
+#+BEGIN: todos :time (-7 14) :tags (\"@tskit\" \"@weekly\")
+#+END:
+")
      :unnarrowed t)
     ("t"
      "todo"

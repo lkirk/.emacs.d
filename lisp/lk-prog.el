@@ -7,12 +7,12 @@
 
 ;;; Code:
 
-(use-package
- elisp-mode
- :ensure nil
- :config
- (when (boundp 'elisp-flymake-byte-compile-load-path)
-   (add-to-list 'elisp-flymake-byte-compile-load-path load-path)))
+;; (use-package
+;;  elisp-mode
+;;  :ensure nil
+;;  :config
+;;  (when (boundp 'elisp-flymake-byte-compile-load-path)
+;;    (add-to-list 'elisp-flymake-byte-compile-load-path load-path)))
 
 (use-package
  cc-mode
@@ -31,29 +31,43 @@
 
 (use-package rust-mode :custom (rust-mode-treesitter-derive t))
 
+(use-package ess)
+
 (use-package
  julia-mode
+ :after ess
  :mode ("\\.jl\\'" . julia-mode)
- :hook (julia-mode . eglot-jl-init)
+ ;; :hook (julia-mode . eglot-jl-init)
  :custom (tab-width 4))
 
-(use-package
- julia-repl
- :hook
- (julia-mode . julia-repl-mode)
- (julia-repl . undo-tree-mode)
- :config (julia-repl-set-terminal-backend 'eat))
+;; (use-package
+;;  julia-repl
+;;  :hook
+;;  (julia-mode . julia-repl-mode)
+;;  (julia-repl . undo-tree-mode)
+;;  :config (julia-repl-set-terminal-backend 'eat))
+
+;; (use-package  ;; interacts with julia org babel
+;;  eat
+;;  :custom (eat-kill-buffer-on-exit t)
+;;  :hook (eshell-load . eat-eshell-mode))
+
+;; (use-package
+;;  eglot-jl
+;;  :after eglot
+;;  :commands eglot-jl-init
+;;  :custom (tab-width 4))
+
+(use-package julia-vterm)
+;; :custom (julia-vterm-repl-program "julia --project=@."))
 
 (use-package
- eat
- :custom (eat-kill-buffer-on-exit t)
- :hook (eshell-load . eat-eshell-mode))
-
-(use-package
- eglot-jl
- :after eglot
- :commands eglot-jl-init
- :custom (tab-width 4))
+ ob-julia-vterm
+ :after org
+ :config (defalias 'org-babel-execute:julia 'org-babel-execute:julia-vterm)
+ (defalias
+   'org-babel-variable-assignments:julia
+   'org-babel-variable-assignments:julia-vterm))
 
 (use-package
  systemd
@@ -68,63 +82,64 @@
 
 (use-package eldoc :diminish eldoc-mode :ensure nil :config (global-eldoc-mode))
 
-(use-package
- flymake
- :ensure nil
- :hook (prog-mode . flymake-mode)
- :bind
- (:map
-  flymake-mode-map
-  ("C-c n" . flymake-goto-next-error)
-  ("C-c N" . flymake-goto-prev-error)))
+;; (use-package
+;;  flymake
+;;  :ensure nil
+;;  :hook (prog-mode . flymake-mode)
+;;  :bind
+;;  (:map
+;;   flymake-mode-map
+;;   ("C-c n" . flymake-goto-next-error)
+;;   ("C-c N" . flymake-goto-prev-error)))
 
-(use-package
- eglot
- :init
- (defun my/format-on-save ()
-   "Format buffer if not in `cc-mode`."
-   ;; Disable so that I can use clang-format in tskit development
-   (unless (or (string-match "repo/tskit" buffer-file-name)
-               (derived-mode-p 'wolfram-mode))
-     (eglot-format)))
- :ensure nil
- :hook
- (prog-mode . eglot-ensure)
- (before-save . my/format-on-save)
- :custom
- (eglot-autoshutdown 1)
- (eglot-report-progress nil)
- :config
- (add-to-list 'eglot-server-programs '(fish-mode . ("fish-lsp" "start")))
- (add-to-list 'eglot-server-programs '(awk-mode . ("awk-language-server")))
- (add-to-list 'eglot-server-programs '(LaTeX-mode . ("texlab")))
- (let ((mode '(wolfram-mode :language-id "Wolfram Language"))
-       ;; (wolfram-lsp-cmd '("wolframscript" "-code"
-       ;;                    "Needs[\"LSPServer`\"];LSPServer`StartServer[]")))
-       (wolfram-lsp-cmd
-        '("WolframKernel"
-          "-noinit"
-          "-noprompt"
-          "-nopaclet"
-          "-noicon"
-          "-nostartuppaclets"
-          "-run"
-          "Needs[\"LSPServer`\"];LSPServer`StartServer[]")))
-   (add-to-list 'eglot-server-programs (cons mode wolfram-lsp-cmd)))
- (setq-default eglot-workspace-configuration
-               '(:texlab
-                 (:experimental
-                  (:verbatimEnvironments ["julia"])
-                  :auxDirectory "./build"
-                  :chktex (:onEdit t :onOpenAndSave t)
-                  :formatterLineLength 80
-                  :latexFormatter "latexindent"
-                  :latexindent (:modifyLineBreaks t))))
- :bind
- (:map
-  eglot-mode-map
-  ("C-c C-j" . xref-find-definitions)
-  ("C-c C-k" . xref-find-references)))
+;; (use-package
+;;  eglot
+;;  :init
+;;  (defun my/format-on-save ()
+;;    "Format buffer if not in `cc-mode`."
+;;    ;; Disable so that I can use clang-format in tskit development
+;;    (unless (or (string-match "repo/tskit" buffer-file-name)
+;;                (derived-mode-p 'wolfram-mode))
+;;      (when (eglot-managed-p) ;; prevent jsonrpc errors
+;;        (eglot-format))))
+;;  :ensure t
+;;  :hook
+;;  (prog-mode . eglot-ensure)
+;;  (before-save . my/format-on-save)
+;;  :custom
+;;  (eglot-autoshutdown 1)
+;;  (eglot-report-progress nil)
+;;  :config
+;;  (add-to-list 'eglot-server-programs '(fish-mode . ("fish-lsp" "start")))
+;;  (add-to-list 'eglot-server-programs '(awk-mode . ("awk-language-server")))
+;;  (add-to-list 'eglot-server-programs '(LaTeX-mode . ("texlab")))
+;;  (let ((mode '(wolfram-mode :language-id "Wolfram Language"))
+;;        ;; (wolfram-lsp-cmd '("wolframscript" "-code"
+;;        ;;                    "Needs[\"LSPServer`\"];LSPServer`StartServer[]")))
+;;        (wolfram-lsp-cmd
+;;         '("WolframKernel"
+;;           "-noinit"
+;;           "-noprompt"
+;;           "-nopaclet"
+;;           "-noicon"
+;;           "-nostartuppaclets"
+;;           "-run"
+;;           "Needs[\"LSPServer`\"];LSPServer`StartServer[]")))
+;;    (add-to-list 'eglot-server-programs (cons mode wolfram-lsp-cmd)))
+;;  (setq-default eglot-workspace-configuration
+;;                '(:texlab
+;;                  (:experimental
+;;                   (:verbatimEnvironments ["julia"])
+;;                   :auxDirectory "./build"
+;;                   :chktex (:onEdit t :onOpenAndSave t)
+;;                   :formatterLineLength 80
+;;                   :latexFormatter "latexindent"
+;;                   :latexindent (:modifyLineBreaks t))))
+;;  :bind
+;;  (:map
+;;   eglot-mode-map
+;;   ("C-c C-j" . xref-find-definitions)
+;;   ("C-c C-k" . xref-find-references)))
 
 (use-package
  ruff-format
@@ -163,14 +178,11 @@
 (use-package
  tex
  :ensure auctex
- :custom
- (TeX-parse-self t)
- (font-latex-fontify-script nil)
+ :custom (TeX-parse-self t) (font-latex-fontify-script nil)
  ;; (TeX-electric-math (cons "\\(" "\\)"))
  :hook
- (LaTeX-mode . eglot-ensure)
- (LaTeX-mode . auto-fill-mode)
- (LaTeX-mode . flyspell-mode)
+ ;; (LaTeX-mode . eglot-ensure)
+ (LaTeX-mode . auto-fill-mode) (LaTeX-mode . flyspell-mode)
  (LaTeX-mode
   .
   (lambda () (set (make-local-variable 'TeX-electric-math) (cons "\\(" "\\)"))))
@@ -200,8 +212,6 @@
 
 (use-package typescript-mode)
 
-(use-package ess :defer t :ensure t)
-
 (use-package
  ess-r-mode
  :bind
@@ -209,6 +219,11 @@
  (:map inferior-ess-r-mode-map ("_" . ess-insert-assign))
  :ensure nil
  :custom (inferior-R-args "--no-restore-history --no-save "))
+
+;; (use-package
+;;  ess-julia-mode
+;;  :ensure nil
+;;  :custom (inferior-julia-args "--project=@. "))
 
 (use-package clojure-mode :defer t)
 (use-package cider :defer t)
@@ -219,6 +234,8 @@
 
 (use-package fish-mode)
 (use-package zig-mode)
+
+(use-package lsp-julia)
 
 (provide 'lk-prog)
 ;;; lk-prog.el ends here

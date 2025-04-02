@@ -156,6 +156,14 @@
  ;; Vertico.
  (read-extended-command-predicate #'command-completion-default-include-p)
 
+ ;; from corfu readme
+ (text-mode-ispell-word-completion nil)
+
+ ;; Hide commands in M-x which do not apply to the current mode.  Corfu
+ ;; commands are hidden, since they are not used via M-x. This setting is
+ ;; useful beyond Corfu.
+ (read-extended-command-predicate #'command-completion-default-include-p)
+
  (safe-local-variable-values
   '((eval add-to-list
           'eglot-server-programs
