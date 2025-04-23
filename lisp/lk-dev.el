@@ -20,6 +20,8 @@
 
 (use-package
  corfu
+ :config
+ :custom (corfu-auto t) (corfu-quit-no-match 'separator)
  ;; Optional customizations
  ;; :custom
  ;; (corfu-cycle t)                ;; Enable cycling for `corfu-next/previous'
@@ -37,7 +39,33 @@
  ;; Recommended: Enable Corfu globally.  This is recommended since Dabbrev can
  ;; be used globally (M-/).  See also the customization variable
  ;; `global-corfu-modes' to exclude certain modes.
- :init (global-corfu-mode))
+ :init (declare-function global-corfu-mode "corfu") (global-corfu-mode))
+
+;; Add extensions
+(use-package
+ cape
+ ;; Bind prefix keymap providing all Cape commands under a mnemonic key.
+ ;; Press C-c p ? to for help.
+ ;; :bind ("C-c p" . cape-prefix-map) ;; Alternative key: M-<tab>, M-p, M-+
+ :bind ("C-<tab>" . cape-prefix-map) ;; Alternative key: M-<tab>, M-p, M-+
+ ;; Alternatively bind Cape commands individually.
+ ;; :bind (("C-c p d" . cape-dabbrev)
+ ;;        ("C-c p h" . cape-history)
+ ;;        ("C-c p f" . cape-file)
+ ;;        ...)
+ :init
+ ;; Add to the global default value of `completion-at-point-functions' which is
+ ;; used by `completion-at-point'.  The order of the functions matters, the
+ ;; first function returning a result wins.  Note that the list of buffer-local
+ ;; completion functions takes precedence over the global list.
+ (add-hook 'completion-at-point-functions #'cape-tex)
+ (add-hook 'completion-at-point-functions #'cape-file)
+ (add-hook 'completion-at-point-functions #'cape-keyword)
+ (add-hook 'completion-at-point-functions #'cape-history))
+;; (add-hook 'completion-at-point-functions #'cape-elisp-symbol)
+;; (add-hook 'completion-at-point-functions #'cape-elisp-block))
+;; (add-hook 'completion-at-point-functions #'cape-history)
+;; ...
 
 ;; ;; may have to use this:
 ;; ;; https://github.com/dankessler/polymode/tree/develop
@@ -98,39 +126,121 @@
 ;;  :custom (lsp-pyright-langserver-command "basedpyright")
 ;;  :hook (python-mode . (lambda () (require 'lsp-pyright))))
 
+;; (use-package  ;; interacts with julia org babel
+;;  eat
+;;  :custom (eat-kill-buffer-on-exit t)
+;;  :hook (eshell-load . eat-eshell-mode))
+
 
 (use-package
  flymake
  :ensure nil
  :hook (prog-mode . flymake-mode)
+ :custom (flymake-indicator-type 'margins) (flymake-autoresize-margins nil)
+ (flymake-margin-indicators-string
+  '((error "!" compilation-error)
+    (warning "W" compilation-warning)
+    (note "I" compilation-info)))
  :bind
  (:map
   flymake-mode-map
   ("C-c n" . flymake-goto-next-error)
-  ("C-c N" . flymake-goto-prev-error)))
+  ("C-c N" . flymake-goto-prev-error))
+ :config
+ (put
+  'flymake-error
+  'flymake-margin-string
+  (alist-get 'error flymake-margin-indicators-string))
+ (put
+  'flymake-warning
+  'flymake-margin-string
+  (alist-get 'warning flymake-margin-indicators-string))
+ (put
+  'flymake-note
+  'flymake-margin-string
+  (alist-get 'note flymake-margin-indicators-string)))
+
+(defun lk/filter-plist (lst)
+  "Filters all plist items from LST.
+
+For example (a b :foo v1 :bar v2 c :baz v3 d) => (a b c d)"
+  (let ((last-was-kw nil))
+    (seq-mapcat
+     (lambda (elm)
+       (cond
+        ((keywordp elm)
+         (setq last-was-kw t)
+         nil)
+        (last-was-kw
+         (setq last-was-kw nil)
+         nil)
+        (t
+         (list elm))))
+     lst)))
+
+;; (declare-function eglot--guess-contact "eglot")
+;; (defun lk/eglot-ensure ()
+;;   (require 'eglot)
+;;   (when (nth 3 (eglot--guess-contact))
+;;     (eglot-ensure)))
+;; (defun lk/eglot-ensure ()
+;;   "Run eglot if the current major mode supports it."
+;;   (let ((supported-modes
+;;          (seq-mapcat
+;;           (lambda (l)
+;;             (if (listp l)
+;;                 (lk/filter-plist l)
+;;               (ensure-list l)))
+;;           (seq-mapcat
+;;            (lambda (l) (ensure-list (car l))) eglot-server-programs))))
+;;     (when (seq-contains-p supported-modes `,major-mode)
+;;       (eglot-ensure))))
+
+;; (defun lk/eglot-supports (server-progs)
+;;   "Run eglot if the current major mode supports it, as defined in SERVER-PROGS."
+;;   (let ((supported-modes
+;;          (seq-mapcat
+;;           (lambda (l)
+;;             (if (listp l)
+;;                 (lk/filter-plist l)
+;;               (ensure-list l)))
+;;           (seq-mapcat (lambda (l) (ensure-list (car l))) server-progs))))
+;;     ;; for some reason I can't match?
+;;     (seq-contains-p supported-modes `,major-mode)))
+;; (advice-add
+;;  'eglot-ensure
+;;  :around
+;;  (lambda (orig &rest _args)
+;;    (when (lk/eglot-supports eglot-server-programs)
+;;      (funcall orig))))
+
+(defun lk/format-on-save ()
+  "Format buffer if not in `cc-mode`."
+  ;; Disable so that I can use clang-format in tskit development
+  (unless (or (string-match "repo/tskit" buffer-file-name)
+              (derived-mode-p 'wolfram-mode))
+    (when (eglot-managed-p) ;; prevent jsonrpc errors
+      (eglot-format))))
 
 (use-package
  eglot
  :init
- (defun my/format-on-save ()
-   "Format buffer if not in `cc-mode`."
-   ;; Disable so that I can use clang-format in tskit development
-   (unless (or (string-match "repo/tskit" buffer-file-name)
-               (derived-mode-p 'wolfram-mode))
-     (when (eglot-managed-p) ;; prevent jsonrpc errors
-       (eglot-format))))
+ (declare-function eglot-managed-p "eglot")
+ (declare-function eglot-format "eglot")
  :ensure t
- :hook
+ :hook (before-save . lk/format-on-save)
+ ;; (prog-mode . lk/eglot-ensure)
  (prog-mode . eglot-ensure)
- (before-save . my/format-on-save)
  :custom
  (eglot-autoshutdown 1)
  (eglot-report-progress nil)
+ (eglot-extend-to-xref 1)
  :config
  (add-to-list 'eglot-server-programs '(fish-mode . ("fish-lsp" "start")))
  (add-to-list 'eglot-server-programs '(awk-mode . ("awk-language-server")))
  (add-to-list 'eglot-server-programs '(LaTeX-mode . ("texlab")))
- (let ((mode '(wolfram-mode :language-id "Wolfram Language"))
+
+ (let ((mode '((wolfram-mode :language-id "Wolfram Language")))
        ;; (wolfram-lsp-cmd '("wolframscript" "-code"
        ;;                    "Needs[\"LSPServer`\"];LSPServer`StartServer[]")))
        (wolfram-lsp-cmd
@@ -143,6 +253,7 @@
           "-run"
           "Needs[\"LSPServer`\"];LSPServer`StartServer[]")))
    (add-to-list 'eglot-server-programs (cons mode wolfram-lsp-cmd)))
+
  (setq-default eglot-workspace-configuration
                '(:texlab
                  (:experimental
