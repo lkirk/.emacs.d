@@ -6,12 +6,19 @@
 
 ;;; Code:
 
+(set-face-attribute 'default nil :font "Noto Sans Mono" :height 90)
+
+;; trusted lisp content
 (add-to-list 'trusted-content (concat user-emacs-directory "early-init.el"))
 (seq-map
  (lambda (f) (add-to-list 'trusted-content f))
  (file-expand-wildcards (concat user-emacs-directory "lisp/*.el")))
 (add-to-list 'trusted-content (concat user-emacs-directory "lisp/"))
+
+;; add lisp modules to load path
 (add-to-list 'load-path "~/.emacs.d/lisp")
+
+;; load the package manager
 (require 'load-elpaca)
 
 ;; enable elpaca get-user integration
@@ -21,6 +28,7 @@
 (require 'use-package-ensure)
 (setq use-package-always-ensure t)
 
+;; load lisp modules
 (require 'lk-look-and-feel)
 (require 'lk-dev)
 (require 'lk-prog)
@@ -29,6 +37,9 @@
 ;; Ensure that everything loads before loading desktop mode
 ;; this prevents opening buffers before their major modes are available
 (elpaca (general :wait t))
+
+;; globally prevent flymake from attempting to load legacy procs.
+;; (leads to tons of warnings)
 (remove-hook 'flymake-diagnostic-functions 'flymake-proc-legacy-flymake)
 (require 'lk-emacs)
 

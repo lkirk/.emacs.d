@@ -13,7 +13,7 @@
 (use-package solarized-theme)
 (use-package
  modus-themes
- :init (setq modus-operandi-palette-overrides '((bg-main "#EDEDED")))
+ :custom (modus-operandi-palette-overrides '((bg-main "#EDEDED")))
  :config
  (progn
    (defvar after-load-theme-hook nil
@@ -30,12 +30,14 @@
    (add-hook 'after-load-theme-hook 'customize-modus-operandi)))
 
 ; undo tree + evil
-(use-package undo-tree :config (global-undo-tree-mode))
+(use-package undo-tree :diminish :config (global-undo-tree-mode))
 
 (use-package
  evil
  :after undo-tree
  :config
+ (declare-function evil-set-undo-system "evil-vars")
+ (declare-function evil-mode "evil-core")
  (evil-set-undo-system 'undo-tree)
  (evil-mode t)
  :custom (evil-want-C-u-scroll t)
@@ -44,7 +46,13 @@
  (evil-want-keybinding nil)
  (undo-tree-history-directory-alist '(("." . "~/.emacs.d/undo-tree"))))
 
-(use-package evil-collection :after evil :config (evil-collection-init))
+(use-package
+ evil-collection
+ :after evil
+ :diminish (evil-collection-unimpaired-mode)
+ :config
+ (declare-function evil-collection-init "evil-collection")
+ (evil-collection-init))
 
 (use-package
  evil-org
@@ -68,8 +76,7 @@
  :init (vertico-mode)
  :custom
  (vertico-count 20) ;; Show more candidates
- (vertico-resize t) ;; Grow and shrink the Vertico minibuffer
- )
+ (vertico-resize t)) ;; Grow and shrink the Vertico minibuffer
 
 ;; Optionally use the `orderless' completion style.
 (use-package
