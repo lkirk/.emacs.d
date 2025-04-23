@@ -6,6 +6,7 @@
 
 ;;; Code:
 
+;; (set-face-attribute 'default nil :family "Ubuntu Mono" :height 105)
 (set-face-attribute 'default nil :font "Noto Sans Mono" :height 90)
 
 ;; trusted lisp content
