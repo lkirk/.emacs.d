@@ -6,6 +6,11 @@
 
 ;;; Code:
 
+(add-to-list 'trusted-content (concat user-emacs-directory "early-init.el"))
+(seq-map
+ (lambda (f) (add-to-list 'trusted-content f))
+ (file-expand-wildcards (concat user-emacs-directory "lisp/*.el")))
+(add-to-list 'trusted-content (concat user-emacs-directory "lisp/"))
 (add-to-list 'load-path "~/.emacs.d/lisp")
 (require 'load-elpaca)
 
@@ -24,6 +29,7 @@
 ;; Ensure that everything loads before loading desktop mode
 ;; this prevents opening buffers before their major modes are available
 (elpaca (general :wait t))
+(remove-hook 'flymake-diagnostic-functions 'flymake-proc-legacy-flymake)
 (require 'lk-emacs)
 
 (provide 'init)
