@@ -26,21 +26,26 @@
 ;; by adding tags either to the toplevel of the file or to the todo items
 ;; themselves
 
+;; (defun todo-files ()
+;;   "Return a list of files with todo items (@project/@todo tags)."
+;;   (seq-uniq
+;;    (seq-map
+;;     #'car
+;;     (org-roam-db-query
+;;      [:select
+;;       [nodes:file]
+;;       :from tags
+;;       :left-join nodes
+;;       :on (= tags:node-id nodes:id)
+;;       :where
+;;       ;; (defun blabla (a) `(or ,@(seq-map (lambda (b) (= b a)) '(1 2 3 4 5)))
+;;       ;; `(or (like tag (seq-map (lambda (t) '(format "%%\"%s\"%%" t) '("@project" "@todo")))))]))))
+;;       (or (like tag ' "%\"@project\"%") (like tag ' "%\"@todo\"%"))]))))
+
 (defun todo-files ()
-  "Return a list of files with todo items (@project/@todo tags)."
-  (seq-uniq
-   (seq-map
-    #'car
-    (org-roam-db-query
-     [:select
-      [nodes:file]
-      :from tags
-      :left-join nodes
-      :on (= tags:node-id nodes:id)
-      :where
-      ;; (defun blabla (a) `(or ,@(seq-map (lambda (b) (= b a)) '(1 2 3 4 5)))
-      ;; `(or (like tag (seq-map (lambda (t) '(format "%%\"%s\"%%" t) '("@project" "@todo")))))]))))
-      (or (like tag ' "%\"@project\"%") (like tag ' "%\"@todo\"%"))]))))
+  "Hack for now."
+  '("/home/lkirk/roam/daily/todo.org"
+    "/home/lkirk/roam/20250305100831-tskit_two_locus.org"))
 
 (defun todo-files-update (&rest _)
   "Update the value of `variable:org-agenda-files'."
@@ -179,7 +184,6 @@ Here's an example of a dynamic block with all of the options
 
 But, if the defaults are desired, the dynamic block is simply:
 #+BEGIN: todos"
-  (message "RUNNING TODOS DBLOCK")
   (let* ((files (or (plist-get params :files) org-agenda-files))
          (states (or (plist-get params :states) (car org-todo-keywords)))
          (tags (plist-get params :tags))
