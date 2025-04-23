@@ -156,7 +156,8 @@ ignored."
 (defun orgfold-activate ()
   "Mode hook for orgfold saving."
   (orgfold-restore)
-  (add-hook 'kill-buffer-hook 'orgfold-kill-buffer nil t))
+  (add-hook 'kill-buffer-hook 'orgfold-kill-buffer nil t)
+  (add-hook 'after-save-hook 'orgfold-save nil t))
 
 (defun orgfold-kill-buffer ()
   "Don't save folding info for unsaved buffers."
