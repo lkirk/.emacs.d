@@ -31,10 +31,8 @@
 ;; pseudo-package for configuring built-in emacs functionality
 (use-package
  emacs
- ;; turns off elpaca-use-package-mode current declaration
- ;; will not be deferred
+ ;; turns off elpaca-use-package-mode current declaration will not be deferred
  :ensure nil
-
  :init
  (defun select-next-window ()
    "Switch to the next window"
@@ -84,8 +82,6 @@
  (tool-bar-mode -1)
  ;; Disable the scroll bars
  (scroll-bar-mode -1)
- ;; Enable ido mode
- ;; (ido-mode t)
  ;; Save the history across sessions as much as possible
  (save-place-mode t)
  (savehist-mode t)
@@ -133,10 +129,6 @@
  (inhibit-startup-screen t)
  ;; No default scratch buffer message
  (initial-scratch-message "")
- ;; Configure ido
- ;; (ido-ignore-extensions t)
- ;; (ido-ignore-files '("__pycache__" "\\.egg-info\\'" "\\#.*#\\'"))
- ;; (ido-ignore-buffers '("\\` " "\\*EGLOT .+? events\\*" "\\*Flymake log\\*"))
  ;; Initial major mode for the scratch buffer
  (initial-major-mode 'fundamental-mode)
  ;; fill-paragraph number of columns
