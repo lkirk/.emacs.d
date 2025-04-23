@@ -19,16 +19,63 @@
 (setq org-roam-dailies-directory (pjoin org-roam-directory "daily"))
 (setq fold-directory-alist `(("." . ,(pjoin org-roam-directory ".fold"))))
 
+;; (defun lk/org-redisplay-babel-result ()
+;;   "Display images after running async blocks."
+;;   (save-excursion
+;;     (condition-case err
+;;         (when-let* ((beg (org-babel-where-is-src-block-result))
+;;                     (elem (and (goto-char beg) (org-element-context)))
+;;                     (end
+;;                      (- (org-element-property :end elem)
+;;                         (org-element-property :post-blank elem))))
+;;           (funcall (cond
+;;                     ((fboundp 'org-link-preview)
+;;                      #'org-link-preview-region)
+;;                     ((featurep 'org-image-preview)
+;;                      #'org-image-preview--in-region)
+;;                     (t
+;;                      #'org-display-inline-images))
+;;                    nil 'refresh beg end))
+;;       (error (message "Could not display images: %S" err)))))
+
+;; (use-package
+;;  ob-julia
+;;  :ensure (:host github :repo "karthink/ob-julia")
+;;  :after (ob org julia-snail)
+;;  ;; :hook (org-babel-julia-after-async-execute . lk/org-redisplay-babel-result)
+;;  :custom (org-babel-julia-backend 'julia-snail)
+;;  :config
+;;  ;; ob-julia is overwriting functions in this package.
+;;  ;; this works for now
+;;  (with-eval-after-load 'julia-snail/ob-julia
+;;    (progn
+;;      (load-file "~/repos/ob-julia-snail/ob-julia-snail.el"))))
+;; ;; :config
+;; ;; (require 'ob-julia)
+;; ;; (require 'ob-julia-snail))
+
+(use-package engrave-faces :after org)
+
+
 (use-package
  org
- :after julia-vterm
+ :after engrave-faces
+ ;; :after julia-vterm
  ;; :bind ("C-c C-p" . org-present)
- :custom
+ :custom (org-use-property-inheritance t)
+ ;; Latex export
+ (org-latex-src-block-backend 'engraved)
+ (org-latex-pdf-process
+  (if (executable-find "latexmk")
+      '("latexmk -shell-escape -f -pdf -%latex -interaction=nonstopmode -output-directory=%o %f")
+    '("%latex -shell-escape -interaction nonstopmode -output-directory %o %f"
+      "%latex -shell-escape -interaction nonstopmode -output-directory %o %f"
+      "%latex -shell-escape -interaction nonstopmode -output-directory %o %f")))
  ;; LaTeX preview settings
- (org-preview-latex-default-process 'dvisvgm)
- (org-latex-create-formula-image-program 'dvisvgm)
+ (org-preview-latex-default-process 'xelatex)
  (org-log-done 'time)
  (org-startup-with-inline-images t)
+ (org-startup-with-latex-preview t)
  (org-highlight-latex-and-related '(latex))
  (org-hide-macro-markers 1)
  ;; (org-src-preserve-indentation t)
@@ -46,7 +93,7 @@
     ("CANCELLED" . (:foreground "grey50" :weight bold))))
  ;; (org-zotero-db-path "~/Zotero/zotero.sqlite")
  (org-confirm-babel-evaluate nil)
- (org-babel-julia-command "julia --project=@.")
+ ;; (org-babel-julia-command "julia --project=@.")
  (org-agenda-custom-commands
   '(("c" "Custom Agenda"
      ((agenda "" ((org-deadline-warning-days 0)))
@@ -57,13 +104,16 @@
  (plist-put org-format-latex-options :scale .8)
  (org-babel-do-load-languages
   'org-babel-load-languages
-  '((shell . t)
-    (python . t)
-    ;; (julia . t)
-    (C . t) (latex . t) (R . t) (julia-vterm . t)))
+  '((shell . t) (python . t) (C . t) (latex . t) (R . t) (julia . julia-snail)))
+ ;; (gnuplot . t)))
+
+ ;; (julia . t)
+ ;; (julia . julia-snail)
+ ;; (julia-vterm . t)))
  ;; (org-zotero-setup-links)
 
  :hook
+ (org-babel-after-execute . org-redisplay-inline-images)
  (org-mode . auto-fill-mode)
  (org-mode . orgfold-activate)
  (org-mode . org-fold-hide-drawer-all)) ;; always hide drawer
@@ -123,9 +173,13 @@
      :unnarrowed t)))
  :config (org-roam-db-autosync-mode))
 
-(use-package ob-async :after org)
+;; (use-package ob-async :after org)
 (use-package org-fragtog :after org :hook (org-mode . org-fragtog-mode))
-(use-package org-autolist :after org :hook (org-mode . org-autolist-mode))
+(use-package
+ org-autolist
+ :diminish
+ :after org
+ :hook (org-mode . org-autolist-mode))
 
 (use-package
  org-download
