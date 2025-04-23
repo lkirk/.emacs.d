@@ -78,7 +78,6 @@
 
  :config
  ;; Set default font face
- (set-face-attribute 'default nil :font "Ubuntu Mono")
  ;; Disable the menu bar
  (menu-bar-mode -1)
  ;; Disable the tool bar
@@ -102,12 +101,6 @@
          (load eidos-mode-file)
          (add-to-list 'auto-mode-alist '("\\.slim\\'" . eidos-mode)))))
 
- (set-face-attribute 'default nil
-                     :family "Ubuntu Mono"
-                     :height 105
-                     :weight 'normal
-                     :width 'normal)
-
  (let ((theme-file (expand-file-name "~/.theme")))
    (when (file-exists-p theme-file)
      (require 's)
@@ -127,6 +120,8 @@
  ;; Wayland remove title bar
  (add-to-list 'default-frame-alist '(undecorated . t))
  :custom
+ ;; ignore Xresources, just to be safe, don't want any config clash
+ (inhibit-x-resources t)
  ;; Do not make backup ~ files
  (make-backup-files nil)
  ;; This is necessary for fractional scaling
