@@ -75,7 +75,6 @@
  :hook (after-save . executable-make-buffer-file-executable-if-script-p)
 
  :config
- ;; Set default font face
  ;; Disable the menu bar
  (menu-bar-mode -1)
  ;; Disable the tool bar
@@ -116,26 +115,22 @@
  ;; Wayland remove title bar
  (add-to-list 'default-frame-alist '(undecorated . t))
  :custom
- ;; ignore Xresources, just to be safe, don't want any config clash
- (inhibit-x-resources t)
- ;; Do not make backup ~ files
- (make-backup-files nil)
- ;; This is necessary for fractional scaling
- (window-resize-pixelwise t)
- (frame-resize-pixelwise t)
- ;; Use column numbers in modeline
- (column-number-mode t)
- ;; Disable splash screen
- (inhibit-startup-screen t)
- ;; No default scratch buffer message
- (initial-scratch-message "")
- ;; Initial major mode for the scratch buffer
- (initial-major-mode 'fundamental-mode)
- ;; fill-paragraph number of columns
- (fill-column 80)
- ;; do not warn when native compile encounters errors
- (native-comp-async-report-warnings-errors nil)
+ (inhibit-x-resources
+  t "ignore Xresources, just to be safe, don't want any config clash")
+ (make-backup-files nil "Do not make backup ~ files")
+ (window-resize-pixelwise t "necessary for fractional scaling")
+ (frame-resize-pixelwise t "necessary for fractional scaling")
+ (column-number-mode t "Use column numbers in modeline")
+ (inhibit-startup-screen t "Disable splash screen")
+ (initial-scratch-message "" "No default scratch buffer message")
+ (initial-major-mode
+  'fundamental-mode "Initial major mode for the scratch buffer")
+ (fill-column 80 "fill-paragraph number of columns")
+ (native-comp-async-report-warnings-errors
+  nil "do not warn when native compile encounters errors")
+ (help-window-select t "Switch to help buffers automatically")
 
+ ;; recommended by vertico
  ;; Support opening new minibuffers from inside existing minibuffers.
  (enable-recursive-minibuffers t)
  ;; Hide commands in M-x which do not work in the current mode.  Vertico
@@ -151,6 +146,7 @@
  ;; useful beyond Corfu.
  (read-extended-command-predicate #'command-completion-default-include-p)
 
+ ;; safe .dir-locals.el variables
  (safe-local-variable-values
   '((eval add-to-list
           'eglot-server-programs
