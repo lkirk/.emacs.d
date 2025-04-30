@@ -52,6 +52,8 @@
 
 ;; julia ==================================================================
 
+(use-package vterm)
+
 (use-package
  julia-mode
  :mode ("\\.jl\\'" . julia-mode)
@@ -78,8 +80,11 @@
  :hook (julia-mode . julia-snail-mode)
  :ensure (:repo "/home/lkirk/repo/ob-julia-snail")
  :custom
- (julia-snail-terminal-type :eat)
+ ;; (julia-snail-terminal-type :eat)
+ (julia-snail-terminal-type :vterm)
  (julia-snail-use-emoji-mode-lighter nil)
+ (julia-snail-multimedia-enable t)
+ (julia-snail-multimedia-buffer-style :multi)
  :config
  ;; snail-extensions is a buffer-local var, so must setq-default for global
  ;; (setq-default julia-snail-extensions '(ob-julia))
@@ -215,6 +220,9 @@ otherwise call ORIG-FN.  TODO: add a dir-locals flag to trigger this?"
 
 (use-package fish-mode)
 (use-package zig-mode)
+
+(use-package vala-mode)
+(use-package jq-mode)
 
 (provide 'lk-prog)
 ;;; lk-prog.el ends here
