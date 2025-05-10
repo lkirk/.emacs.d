@@ -25,6 +25,7 @@
    (add-to-list
     'elisp-flymake-byte-compile-load-path
     (concat user-emacs-directory "lisp/"))))
+;; TODO elpaca repos path?
 
 (use-package
  elisp-autofmt
@@ -70,6 +71,66 @@
  :commands eglot-jl-init
  :custom (tab-width 4))
 
+(defun julia-snail--port-open-p (port)
+  "Return non-nil if PORT is open on localhost."
+  (condition-case nil
+      (let ((process
+             (make-network-process
+              :name "julia-snail--port-check"
+              :buffer nil
+              :family 'ipv4
+              :service port
+              :host "127.0.0.1"
+              :server t)))
+        (when process
+          (delete-process process)
+          port))
+    (error nil)))
+
+(defun julia-snail--next-open-port (&optional start end)
+  "Find the next open port within a range between START and END."
+  (let ((start (or start 10011))
+        (end (or end 11000)))
+    (seq-some #'julia-snail--port-open-p (number-sequence start end))))
+
+(defun lk-dirname (d)
+  (file-name-nondirectory (directory-file-name d)))
+
+;; TODO: relative paths
+;; (when have-org-attach
+;;   (setq-local julia-snail/ob-julia-resource-directory
+;;               (concat
+;;                (string-replace
+;;                 (file-name-parent-directory
+;;                  (directory-file-name (buffer-file-name)))
+;;                 "" (org-attach-dir))
+;;                "/" julia-snail/ob-julia-resource-directory)))
+(defun julia-snail-advice (orig &rest args)
+  (let* ((orig-buffer (buffer-name))
+         (orig-dir default-directory)
+         (have-org-attach
+          (and (string-equal major-mode "org-mode") (org-attach-dir)))
+         (local-julia-snail-port (julia-snail--next-open-port))
+         (local-julia-snail-repl-buffer
+          (format "*snail-repl %s*"
+                  (lk-dirname
+                   (if have-org-attach
+                       (org-attach-dir)
+                     (expand-file-name (project-root (project-current))))))))
+    (when have-org-attach
+      (setq-local julia-snail/ob-julia-resource-directory
+                  (concat (org-attach-dir) "/" ".ob-julia-snail/")))
+    (setq-local julia-snail-repl-buffer local-julia-snail-repl-buffer)
+    (setq-local julia-snail-port local-julia-snail-port)
+    (when have-org-attach
+      (cd (org-attach-dir)))
+    (let ()
+      (apply orig args)
+      (with-current-buffer (get-buffer orig-buffer)
+        (setq default-directory orig-dir)))))
+
+(advice-add 'julia-snail :around #'julia-snail-advice)
+
 (use-package
  julia-snail
  :init
@@ -78,7 +139,8 @@
     (lambda (s) (format "--sysimage=%s" s))
     (seq-filter #'file-exists-p (seq-map #'expand-file-name files))))
  :hook (julia-mode . julia-snail-mode)
- :ensure (:repo "/home/lkirk/repo/ob-julia-snail")
+ ;; :ensure (:repo "/home/lkirk/repo/ob-julia-snail")
+ :ensure (:repo "/home/lkirk/repo/julia-snail")
  :custom
  ;; (julia-snail-terminal-type :eat)
  (julia-snail-terminal-type :vterm)
@@ -87,7 +149,8 @@
  (julia-snail-multimedia-buffer-style :multi)
  :config
  ;; snail-extensions is a buffer-local var, so must setq-default for global
- ;; (setq-default julia-snail-extensions '(ob-julia))
+ (setq-default julia-snail-extensions '(ob-julia))
+ (setq-default julia-snail/ob-julia-resource-directory ".ob-julia-snail/")
  (setq-default julia-snail-repl-display-eval-results t)
  (setq-default julia-snail-extra-args
                `("--threads=auto,auto" "-q" "--project=@." ,@
@@ -101,9 +164,9 @@
   'completion-at-point-functions #'julia-snail-repl-completion-at-point
   t)
  (remove-function (local 'eldoc-documentation-function) #'julia-snail-eldoc)
- (remove-hook 'xref-backend-functions #'julia-snail-xref-backend t)
- ;; ;; some hacky overrides for now.
- (load-file "~/repo/ob-julia-snail/ob-julia-snail/ob-julia-snail.el"))
+ (remove-hook 'xref-backend-functions #'julia-snail-xref-backend t))
+;; ;; ;; some hacky overrides for now.
+;; (load-file "~/repo/ob-julia-snail/ob-julia-snail/ob-julia-snail.el"))
 
 ;; R ======================================================================
 
@@ -223,6 +286,9 @@ otherwise call ORIG-FN.  TODO: add a dir-locals flag to trigger this?"
 
 (use-package vala-mode)
 (use-package jq-mode)
+
+(use-package gnuplot)
+(use-package gnuplot-mode)
 
 (provide 'lk-prog)
 ;;; lk-prog.el ends here
