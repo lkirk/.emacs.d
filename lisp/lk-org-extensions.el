@@ -5,6 +5,11 @@
 
 ;;; Code:
 
+(require 'org)
+(require 'org-element)
+(require 'org-element-ast)
+;;(require 'org-roam-db)
+
 ;; TODO: this func is duplicated
 (defun pjoin (&rest p)
   "Join file paths P."
@@ -54,12 +59,49 @@
 (advice-add 'org-agenda :before #'todo-files-update)
 (advice-add 'org-todo-list :before #'todo-files-update)
 
-(defun org-file-map-headlines (file func)
-  "Read an org FILE and map a FUNC to its headlines."
-  (with-temp-buffer
-    (insert-file-contents file)
-    (org-mode)
-    (org-element-map (org-element-parse-buffer 'headline) 'headline func)))
+;; (defun org-file-map-headlines (file func)
+;;   "Read an org FILE and map a FUNC to its headlines."
+;;   (with-temp-buffer
+;;     (insert-file-contents file)
+;;     (org-mode)
+;;     (org-element-map (org-element-parse-buffer 'headline) 'headline func)))
+
+(defun org-file-map (file granularity types fun)
+  "Map FUN over TYPES of org elements, parsed at GRANULARITY, given a FILE name.
+Try to be as efficient as possible, avoid latex and image rendering in the
+tmp buffer that the target file is loaded into."
+  (when (file-exists-p file)
+    (with-temp-buffer
+      (let ((org-export-before-parsing-functions nil)
+            (org-startup-with-inline-images nil)
+            (org-startup-with-latex-preview nil)
+            (org-highlight-latex-and-related '())
+            (org-src-tab-fontify-natively nil)
+            (buffer-file-name file))
+        (cd (file-name-parent-directory buffer-file-name))
+        (insert-file-contents file)
+        (delay-mode-hooks
+          (org-mode))
+        (org-element-map (org-element-parse-buffer granularity t) types fun)))))
+
+(defun org-parse-linked-attached-files (file)
+  "Parse all linked files in given FILE.
+All file paths are relative to the org-attach-dir for that file, if it exists."
+  (org-file-map
+   file 'object 'link
+   (lambda (e)
+     (let* ((type (org-element-property :type e))
+            (attach-dir
+             (and (string-equal major-mode "org-mode")
+                  (org-attach-dir nil t)
+                  (concat (org-attach-dir nil t) "/")))
+            (path
+             (and type
+                  (member type '("file" "attachment"))
+                  (org-element-property :path e))))
+       (if (and path attach-dir)
+           (string-replace attach-dir "" path)
+         path)))))
 
 (defun timestamp-in-p (org-ts lower upper)
   "Test if the org timestamp, ORG-TS is in LOWER and UPPER."
@@ -98,6 +140,85 @@ caller.  T-PROPS are the properties in the plist that store the timestamps"
 
 (setq todos-dblock-time-props '(:closed :deadline :scheduled))
 
+
+(defun filter-todo-items (file &optional todo-states todo-tags time-range)
+  "Given the input FILE, parse todo headlines and their inherited tags.
+If TODO-STATES is specified, filter based on the state.  If TODO-TAGS is
+specified, we should keep only todo items with these tags.  If TIME-RANGE
+is specified, then if the timestamps of one of 'todos-dblock-time-props'
+are in the range, then the todos will be kept."
+  (let ((states (or todo-states (car org-todo-keywords)))
+        (t-props todos-dblock-time-props))
+    (org-file-map
+     file 'object 'headline
+     (lambda (e)
+       (let* ((todo (org-element-property :todo-keyword e))
+              (title (org-element-property :title e))
+              (tags (org-get-tags e))
+              (has-tags (or (null todo-tags) (seq-intersection todo-tags tags)))
+              (t-stamps (get-timestamp-plist e t-props))
+              (in-time-range
+               (or (null time-range)
+                   (any-in-time-range-p t-stamps time-range t-props)))
+              (has-state (member todo states)))
+         (when (and has-tags has-state in-time-range)
+           e))))))
+
+
+(defun get-todo-subtree (file todo-tag)
+  "Extract todo subtree from FILE.
+The target subtree must be labelled with a tag, specified in TODO-TAG."
+  (org-file-map
+   file 'object 'headline
+   (lambda (elem)
+     (when-let* (((org-element-property :todo-keyword elem))
+                 (tags (org-get-tags elem))
+                 ((member todo-tag tags))
+                 ((seq-some
+                   (lambda (tag)
+                     (not (get-text-property 0 'inherited tag)))
+                   tags)))
+       elem))))
+
+
+(defun org-dblock-write:todo-tree (params)
+  "Insert a document tree of todo items, the toplevel is tagged explicitly.
+The tag that is used to specify the toplevel of the todo tree must not be
+inherited.  This is how we avoid an explosion of identified org elements.
+PARAMS is a plist with ':files' to find todos in.  There is no default.
+':tag' specifies the tag that identifies the toplevel todo tree in the doc.
+If ':level' is not specified, the tree will be inserted at the next inner
+level, relative to the current level.  If ':level' is specified, the tree
+will be inserted at the specified level.
+
+Here's an example of a dynamic block with all of the options
+#+BEGIN: todos :file \"todo.org\" :tag \"tasks\""
+  (let* ((file (expand-file-name (plist-get params :file)))
+         (tag (plist-get params :tag))
+         (level
+          (or (plist-get params :level) (+ 1 (get-current-headline-level))))
+         (subtree (get-todo-subtree file tag)))
+    ;; (insert (org-element-interpret-data subtree))))
+    (insert (org-element-interpret-data (adjust-tree-level subtree level)))))
+
+(defun adjust-tree-level (tree level)
+  "Given a TREE of org values, adjust the level of each elem.
+The minimum level of each element will be equal to the specified
+LEVEL.  All elements will retain their relative indent."
+  (let* ((tree-level
+          (seq-min
+           (org-element-map
+            tree 'headline
+            (lambda (e) (org-element-property :level e)))))
+         (delta (- level tree-level)))
+    (org-element-map
+     tree 'headline
+     (lambda (e)
+       (org-element-put-property
+        e
+        :level (+ delta (org-element-property :level e)))))
+    tree))
+
 (defun get-todo-items (file &optional todo-states todo-tags time-range)
   "Given the input FILE, parse todo headlines and their inherited tags.
 If TODO-STATES is specified, filter based on the state.  If TODO-TAGS is
@@ -106,8 +227,8 @@ is specified, then if the timestamps of one of 'todos-dblock-time-props'
 are in the range, then the todos will be kept."
   (let ((states (or todo-states (car org-todo-keywords)))
         (t-props todos-dblock-time-props))
-    (org-file-map-headlines
-     file
+    (org-file-map
+     file 'headline 'headline
      (lambda (h)
        (let* ((todo (org-element-property :todo-keyword h))
               (title (org-element-property :title h))
@@ -165,7 +286,7 @@ will describe the level at which headlines should be generated."
              (make-string level ?*)
              (string-join (car group) ":")
              (format-todo-entries (cdr group) (+ 1 level))))
-   (seq-group-by (lambda (t) (plist-get t :tags)) (sort-todos todos))))
+   (seq-group-by (lambda (tags) (plist-get tags :tags)) (sort-todos todos))))
 
 (defun get-current-headline-level ()
   "Get the headline level of the current element under cursor."
@@ -277,7 +398,6 @@ But, if the defaults are desired, the dynamic block is simply:
          `(,id . ,path)))
      (roam-get-files-from-ids ids))))
 
-
 (defun roam-rewrite-links (in-file out-file link-alist)
   "Rewrite links with name of file that the id in the roam link encodes.
 Read from IN-FILE and write to OUT-FILE without modifying the original.
@@ -328,6 +448,65 @@ relative."
          (print (format "%s -> %s" file outfile))
          (roam-rewrite-links file outfile out-links)))
      (seq-map #'cdr linked-files))))
+
+;; (defun parse-org-links-from-file (file)
+;;   (when (file-exists-p file)
+;;     (with-temp-buffer
+;;       (let ((org-export-before-parsing-functions nil)
+;;             (org-startup-with-inline-images nil)
+;;             (org-startup-with-latex-preview nil)
+;;             (org-highlight-latex-and-related '())
+;;             (org-src-tab-fontify-natively nil)
+;;             (buffer-file-name file))
+;;         (cd (file-name-parent-directory buffer-file-name))
+;;         (insert-file-contents file)
+;;         (delay-mode-hooks
+;;           (org-mode))
+;;         (org-element-map
+;;          (org-element-parse-buffer 'object t) 'link
+;;          (lambda (e)
+;;            (let* ((type (org-element-property :type e))
+;;                   (attach-dir
+;;                    (and (string-equal major-mode "org-mode")
+;;                         (org-attach-dir nil t)
+;;                         (concat (org-attach-dir nil t) "/")))
+;;                   (path
+;;                    (and type
+;;                         (member type '("file" "attachment"))
+;;                         (org-element-property :path e))))
+;;              (if (and path attach-dir)
+;;                  (string-replace attach-dir "" path)
+;;                path))))))))
+
+;; (defun parse-org-links-from-file (file)
+;;   (when (file-exists-p file)
+;;     (with-temp-buffer
+;;       (let ((org-export-before-parsing-functions nil)
+;;             (org-startup-with-inline-images nil)
+;;             (org-startup-with-latex-preview nil)
+;;             (org-highlight-latex-and-related '())
+;;             (org-src-tab-fontify-natively nil)
+;;             (buffer-file-name file))
+;;         (cd (file-name-parent-directory buffer-file-name))
+;;         (insert-file-contents file)
+;;         (delay-mode-hooks
+;;           (org-mode))
+;;         (org-element-map
+;;          (org-element-parse-buffer 'object t) 'link
+;;          (lambda (e)
+;;            (let* ((type (org-element-property :type e))
+;;                   (attach-dir
+;;                    (and (string-equal major-mode "org-mode")
+;;                         (org-attach-dir nil t)
+;;                         (concat (org-attach-dir nil t) "/")))
+;;                   (path
+;;                    (and type
+;;                         (member type '("file" "attachment"))
+;;                         (org-element-property :path e))))
+;;              (if (and path attach-dir)
+;;                  (string-replace attach-dir "" path)
+;;                path))))))))
+
 
 (provide 'lk-org-extensions)
 ;;; lk-org-extensions.el ends here
