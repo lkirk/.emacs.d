@@ -34,7 +34,6 @@
       "%latex -shell-escape -interaction nonstopmode -output-directory %o %f"
       "%latex -shell-escape -interaction nonstopmode -output-directory %o %f")))
  ;; LaTeX preview settings
- (org-preview-latex-default-process 'xelatex)
  (org-log-done 'time)
  (org-startup-with-inline-images t)
  (org-startup-with-latex-preview t)
@@ -60,7 +59,13 @@
  (plist-put org-format-latex-options :scale .8)
  (org-babel-do-load-languages
   'org-babel-load-languages
-  '((shell . t) (python . t) (C . t) (latex . t) (R . t) (julia . julia-snail)))
+  '((shell . t)
+    (python . t)
+    (C . t)
+    (latex . t)
+    (R . t)
+    (julia . julia-snail)
+    (gnuplot . t)))
  :hook
  (org-babel-after-execute . org-redisplay-inline-images)
  (org-mode . auto-fill-mode)
