@@ -148,7 +148,45 @@
 
  ;; safe .dir-locals.el variables
  (safe-local-variable-values
-  '((eval add-to-list
+  '((eval
+     progn
+     (require 'reformatter)
+     (reformatter-define
+      reorder-python-imports
+      :program "uvx"
+      :args
+      (list
+       "--from"
+       "git+https://github.com/asottile/reorder_python_imports@v3.14.0"
+       "reorder-python-imports"
+       "--exit-zero-even-if-changed"
+       (format
+        "--application-directories=%s"
+        (concat (expand-file-name (project-root (project-current))) "python"))
+       "--unclassifiable-application-module=_tskit"
+       "-")
+      :lighter " RdrPyImp"
+      :group 'reorder-python-imports)
+     (reorder-python-imports-on-save-mode))
+    (eval
+     progn
+     (require 'reformatter)
+     (reformatter-define
+      reorder-python-imports
+      :program "uvx"
+      :args
+      (list
+       "git+https://github.com/asottile/reorder_python_imports@v3.14.0"
+       "--exit-zero-even-if-changed"
+       (format
+        "--application-directories=%s"
+        (concat (expand-file-name (project-root (project-current))) "python"))
+       "--unclassifiable-application-module=_tskit"
+       "-")
+      :lighter " RdrPyImp"
+      :group 'reorder-python-imports)
+     (reorder-python-imports-on-save-mode))
+    (eval add-to-list
           'eglot-server-programs
           '(haskell-mode
             "nix"
@@ -169,6 +207,7 @@
           '(c-mode "clangd" "-header-insertion=never"))
     (eval add-hook 'before-save-hook 'org-beamer-export-to-pdf nil t)
     (eval add-hook 'before-save-hook 'clang-format-buffer nil t))))
+
 
 (provide 'lk-emacs)
 ;;; lk-emacs.el ends here
