@@ -140,7 +140,8 @@
     (seq-filter #'file-exists-p (seq-map #'expand-file-name files))))
  :hook (julia-mode . julia-snail-mode)
  ;; :ensure (:repo "/home/lkirk/repo/ob-julia-snail")
- :ensure (:repo "/home/lkirk/repo/julia-snail")
+ ;; :ensure (:repo "/home/lkirk/repo/julia-snail")
+ :ensure (:host github :repo "lkirk/julia-snail")
  :custom
  ;; (julia-snail-terminal-type :eat)
  (julia-snail-terminal-type :vterm)
@@ -211,6 +212,12 @@ otherwise call ORIG-FN.  TODO: add a dir-locals flag to trigger this?"
    (interactive)
    (insert "__import__(\"IPython\").embed()"))
  :bind (:map python-mode-map ("C-c p" . insert-ipython-debug)))
+
+(use-package
+ python-mls
+ ;; :custom
+ ;; (python-mls-multiline-history-modifier '(meta shift))
+ :hook (inferior-python-mode . python-mls-mode))
 
 (use-package
  ruff-format
