@@ -23,6 +23,7 @@
 
 (use-package
  org
+ :ensure nil
  :after engrave-faces
  :custom (org-use-property-inheritance t)
  ;; LaTeX export
@@ -166,6 +167,8 @@
     (org-remove-inline-images)
     (org-present-show-cursor)
     (org-present-read-write))))
+
+(use-package org-nix-shell :hook (org-mode . org-nix-shell-mode))
 
 (provide 'lk-org)
 ;;; lk-org.el ends here
