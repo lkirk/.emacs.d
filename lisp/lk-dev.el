@@ -46,9 +46,11 @@
 ;;  (add-hook 'completion-at-point-functions #'cape-keyword)
 ;;  (add-hook 'completion-at-point-functions #'cape-history))
 
+(use-package direnv :config (direnv-mode)
+  :custom (direnv-always-show-summary nil))
+
 (use-package
  flymake
- :ensure nil
  :hook (prog-mode . flymake-mode)
  :custom (flymake-indicator-type 'margins) (flymake-autoresize-margins nil)
  (flymake-margin-indicators-string
