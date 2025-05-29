@@ -7,7 +7,7 @@
 ;;; Code:
 
 ;; (set-face-attribute 'default nil :family "Ubuntu Mono" :height 105)
-(set-face-attribute 'default nil :font "Noto Sans Mono" :height 90)
+(set-face-attribute 'default nil :font "Noto Sans Mono" :height 120)
 
 ;; trusted lisp content
 (add-to-list 'trusted-content (concat user-emacs-directory "early-init.el"))
